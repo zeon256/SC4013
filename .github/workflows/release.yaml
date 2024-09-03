@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' # make sure it only run on main
     permissions:
-      contents: write # to be able to publish a GitHub release
+      # contents: write # to be able to publish a GitHub release
       issues: write # to be able to comment on released issues
       pull-requests: write # to be able to comment on released pull requests
       id-token: write # to enable use of OIDC for npm provenance    
@@ -33,24 +33,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
-  build-docker:
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-    permissions:
-      packages: write # Allows pushing packages to GHCR
-      contents: read  # Necessary to read repository contents
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Log in to GitHub Container Registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
   check-docker-build:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
@@ -60,3 +42,20 @@ jobs:
         uses: docker/setup-buildx-action@v2
       - name: Check Docker build
         run: docker build .
+  build-docker:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: read  # Necessary to read repository contents
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Log in to DigitalOcean Container Registry
+        run: echo "${{ secrets.DO_REGISTRY_CI_TOKEN }}" | docker login registry.digitalocean.com -u ${{ github.actor }} --password-stdin
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: registry.digitalocean.com/YOUR_REGISTRY_NAME/${{ github.repository }}:${{ github.ref_name }}
