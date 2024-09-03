@@ -5,7 +5,7 @@ on:
     branches:
       - main
     tags:
-      - 'v*.*.*' # Matches v1.0.0, v1.2.3, etc.
+      - 'v[0-9]+.[0-9]+.[0-9]+' # Matches v1.0.0, v1.2.3, etc.
   pull_request:
     branches:
       - main
@@ -51,7 +51,6 @@ jobs:
           context: .
           push: true
           tags: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
-
   check-docker-build:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
