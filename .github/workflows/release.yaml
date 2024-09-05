@@ -33,23 +33,23 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
-  # build-docker:
-  #   runs-on: ubuntu-latest
-  #   if: startsWith(github.ref, 'refs/tags/v')
-  #   permissions:
-  #     contents: read  # Necessary to read repository contents
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: Set up Docker Buildx
-  #       uses: docker/setup-buildx-action@v2
-  #     - name: Log in to DigitalOcean Container Registry
-  #       run: echo "${{ secrets.DO_REGISTRY_CI_TOKEN }}" | docker login registry.digitalocean.com -u ${{ github.actor }} --password-stdin
-  #     - name: Build and push Docker image
-  #       uses: docker/build-push-action@v5
-  #       with:
-  #         context: .
-  #         push: true
-  #         tags: registry.digitalocean.com/YOUR_REGISTRY_NAME/${{ github.repository }}:${{ github.ref_name }}
+  build-docker:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: read  # Necessary to read repository contents
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Log in to DigitalOcean Container Registry
+        run: echo "${{ secrets.DO_REGISTRY_CI_TOKEN }}" | docker login registry.digitalocean.com -u ${{ github.actor }} --password-stdin
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: registry.digitalocean.com/YOUR_REGISTRY_NAME/${{ github.repository }}:${{ github.ref_name }}
   check-docker-build:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
