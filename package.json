@@ -4,7 +4,7 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "https://github.com/zeon256/SC4013"
+    "url": "git+https://github.com/zeon256/SC4013.git"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.4.0",
