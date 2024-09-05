@@ -18,8 +18,8 @@ jobs:
       pull-requests: write # to be able to comment on released pull requests
       id-token: write # to enable use of OIDC for npm provenance    
     outputs:
-      new_release_version: ${{ steps.Release.outputs.new_release_version }}
-      new_release_published: ${{ steps.Release.outputs.new_release_published }}
+      new_release_version: ${{ steps.release-step.outputs.new_release_version }}
+      new_release_published: ${{ steps.release-step.outputs.new_release_published }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -31,6 +31,7 @@ jobs:
       - name: Install dependencies
         run: npm install -g semantic-release @semantic-release/git @semantic-release/changelog @semantic-release/exec
       - name: Release
+        id: release-step
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -46,8 +47,8 @@ jobs:
           fi
       - name: Debug Output
         run: |
-          echo "New Release Version: ${{ steps.Release.outputs.new_release_version }}"
-          echo "New Release Published: ${{ steps.Release.outputs.new_release_published }}"
+          echo "New Release Version: ${{ steps.release-step.outputs.new_release_version }}"
+          echo "New Release Published: ${{ steps.release-step.outputs.new_release_published }}"
   always_run:
    needs: release
    runs-on: ubuntu-latest
