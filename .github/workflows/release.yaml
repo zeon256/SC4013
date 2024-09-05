@@ -35,7 +35,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Running semantic-release in dry-run mode..."
-          NEW_RELEASE_VERSION=$(npx semantic-release --dry-run | grep -oP 'The next release version is \K\d+\.\d+\.\d+' || echo "")
+          NEW_RELEASE_VERSION=$(npx semantic-release --dry-run | grep -oP 'Skip v\K\d+\.\d+\.\d+ tag in dry-run mode' || echo "")
           echo "Detected version: $NEW_RELEASE_VERSION"
           echo "new_release_version=$NEW_RELEASE_VERSION" >> $GITHUB_OUTPUT
           if [ -n "$NEW_RELEASE_VERSION" ]; then
