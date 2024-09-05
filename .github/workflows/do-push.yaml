@@ -1,0 +1,24 @@
+name: DigitalOcean Push Image
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+' # Matches v1.0.0, v1.2.3, etc.
+
+jobs:
+  build-docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Necessary to read repository contents
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Log in to DigitalOcean Container Registry
+        run: echo "${{ secrets.DO_REGISTRY_CI_TOKEN }}" | docker login registry.digitalocean.com -u ${{ github.actor }} --password-stdin
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: registry.digitalocean.com/sc4013/${{ github.repository }}:${{ github.ref_name }}
