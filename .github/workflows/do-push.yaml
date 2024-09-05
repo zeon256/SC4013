@@ -1,9 +1,8 @@
 name: DigitalOcean Push Image
 
-# on:
-#   push:
-#     tags:
-#       - 'v[0-9]+.[0-9]+.[0-9]+' # Matches v1.0.0, v1.2.3, etc.
+on:
+  release:
+    types: [published]
 
 jobs:
   build-docker:
