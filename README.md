@@ -32,7 +32,8 @@
     - Detailed explanation of API security measures
 - [ ] Test Results and Security Analysis
     - Report on API testing and security evaluation
-- [ ] Dockerfile
+- [ ] Monitoring with Datadog
+- [x] Dockerfile
 - [ ] CI/CD DevSecOps
 
 ## Setup
@@ -42,14 +43,16 @@ To install dependencies:
 bun install
 ```
 
-To run:
+# Elysia with Bun runtime
 
+## Development
+To start the development server run:
 ```bash
-bun run ./src/index.ts
+bun run dev
 ```
 
-This project was created using `bun init` in bun v1.0.6. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+Open http://localhost:3000/ with your browser to see the result.
 
-## Contribution
+# Contribution
 - Ensure that commit messages follow [Angular Commit Messages](https://gist.github.com/brianclements/841ea7bffdb01346392c)
 - Create Merge Request with branch titled according to type. Example: `feat/jwt-impl` or `docs/update-readme`
