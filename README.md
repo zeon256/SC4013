@@ -32,7 +32,8 @@
     - Detailed explanation of API security measures
 - [ ] Test Results and Security Analysis
     - Report on API testing and security evaluation
-- [ ] Dockerfile
+- [ ] Monitoring with Datadog
+- [x] Dockerfile
 - [ ] CI/CD DevSecOps
 
 ## Setup
