@@ -1,9 +1,9 @@
-import { Elysia, t } from "elysia";
 import { swagger } from "@elysiajs/swagger";
+import { Elysia, t } from "elysia";
 import { Logestic } from "logestic";
 import { Pool } from "pg";
 import { readJsonConfig } from "./config";
-import { dbHealthHandler, dbHealthHandlerSchema } from "./routes";
+import { routes } from "./routes";
 
 (async () => {
 	const cfg = await readJsonConfig();
@@ -19,8 +19,8 @@ import { dbHealthHandler, dbHealthHandlerSchema } from "./routes";
 		.get("/", () => "Hello Elysia")
 		.get(
 			"/db-healthz",
-			async ({ store: { pool } }) => await dbHealthHandler(pool),
-			dbHealthHandlerSchema,
+			async ({ store: { pool } }) => await routes.dbHealth.fn(pool),
+			routes.dbHealth.schema,
 		)
 		.listen(cfg.serverConfig.port);
 

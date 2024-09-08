@@ -1,18 +1,18 @@
 import type { PoolConfig } from "pg";
 
 export type ServerConfig = {
-	port: number;
-	address: string;
+	port: Readonly<number>;
+	address: Readonly<string>;
 };
 
 export type AppConfig = {
-	serverConfig: ServerConfig;
-	dbConfig: PoolConfig;
+	serverConfig: Readonly<ServerConfig>;
+	dbConfig: Readonly<PoolConfig>;
 };
 
 export async function readJsonConfig(
 	filePath = "./config.json",
-): Promise<AppConfig> {
+): Promise<Readonly<AppConfig>> {
 	const file = Bun.file(filePath);
 	const text = await file.text();
 	const config: AppConfig = JSON.parse(text);
