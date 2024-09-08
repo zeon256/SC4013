@@ -1,6 +1,6 @@
 import { t } from "elysia";
 import type { Pool } from "pg";
-import { auth } from "./auth"
+import { authRoute } from "./auth";
 
 const dbHealthHandlerSchema = {
 	response: { 200: t.String(), 500: t.String() },
@@ -22,6 +22,5 @@ export const routes = {
 	dbHealth: {
 		fn: dbHealthHandler,
 		schema: dbHealthHandlerSchema,
-	},
-	auth: auth
+	}
 } as const;

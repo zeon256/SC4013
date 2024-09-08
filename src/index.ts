@@ -4,6 +4,7 @@ import { Logestic } from "logestic";
 import { Pool } from "pg";
 import { readJsonConfig } from "./config";
 import { routes } from "./routes";
+import { authRoute } from "./routes/auth";
 
 (async () => {
 	const cfg = await readJsonConfig();
@@ -22,26 +23,8 @@ import { routes } from "./routes";
 			async ({ store: { pool } }) => await routes.dbHealth.fn(pool),
 			routes.dbHealth.schema,
 		).group('/api', (api_grp) =>
-			api_grp.group("/v1", (v1_group) =>
-				v1_group.group("/auth", (auth_group) =>
-					auth_group
-						.post(
-							"/login",
-							async () => await routes.auth.v1.login.fn(),
-							routes.auth.v1.login.schema,
-						)
-						.post(
-							"/logout",
-							async () => await routes.auth.v1.logout.fn(),
-							routes.auth.v1.logout.schema,
-						)
-						.post(
-							"/register",
-							async () => await routes.auth.v1.register.fn(),
-							routes.auth.v1.register.schema,
-						)
-				)
-			)
+			api_grp
+			.use(authRoute)
 		)
 		.listen(cfg.serverConfig.port);
 
