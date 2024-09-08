@@ -19,7 +19,7 @@ const logoutSchema = {
 	detail: {
 		summary: "Logout the user",
 		description:
-			"Performs a authentication for the user and returns the status. If an error occurs, a 500 status is returned.",
+			"Performs a logout for the user and returns the status. If an error occurs, a 500 status is returned.",
 	},
 };
 
@@ -33,7 +33,7 @@ const registerSchema = {
 	detail: {
 		summary: "Register the user",
 		description:
-			"Performs a authentication for the user and returns the status. If an error occurs, a 500 status is returned.",
+			"Register an account for the user and returns the status. If an error occurs, a 500 status is returned.",
 	},
 };
 
