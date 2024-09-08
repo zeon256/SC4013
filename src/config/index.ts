@@ -6,7 +6,7 @@ export type ServerConfig = {
 };
 
 export type AppConfig = {
-	serverConfig?: ServerConfig;
+	serverConfig: ServerConfig;
 	dbConfig: PoolConfig;
 };
 
@@ -15,5 +15,16 @@ export async function readJsonConfig(
 ): Promise<AppConfig> {
 	const file = Bun.file(filePath);
 	const text = await file.text();
-	return JSON.parse(text);
+	const config: AppConfig = JSON.parse(text);
+	const defaultServerConfig: ServerConfig = {
+		port: 3000,
+		address: "localhost",
+	};
+
+	const serverConfig: ServerConfig = config.serverConfig || defaultServerConfig;
+
+	return {
+		serverConfig,
+		dbConfig: config.dbConfig,
+	};
 }

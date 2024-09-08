@@ -1,9 +1,9 @@
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 import { swagger } from "@elysiajs/swagger";
 import { Logestic } from "logestic";
 import { Pool } from "pg";
 import { readJsonConfig } from "./config";
-import { dbHealthHandler } from "./routes";
+import { dbHealthHandler, dbHealthHandlerSchema } from "./routes";
 
 (async () => {
 	const cfg = await readJsonConfig();
@@ -14,16 +14,15 @@ import { dbHealthHandler } from "./routes";
 		.use(swagger())
 		.use(Logestic.preset("common"))
 		.onError(({ code, error, set }) => {
-			if (code === "INTERNAL_SERVER_ERROR") {
-				set.status = 500;
-				return "Internal Server Error";
-			}
-
 			return "Internal Server Error";
 		})
 		.get("/", () => "Hello Elysia")
-		.get("/db-healthz", async ({ store: { pool } }) => dbHealthHandler(pool))
-		.listen(cfg.serverConfig?.port ?? 3000);
+		.get(
+			"/db-healthz",
+			async ({ store: { pool } }) => await dbHealthHandler(pool),
+			dbHealthHandlerSchema,
+		)
+		.listen(cfg.serverConfig.port);
 
 	console.log(
 		`[+] 🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
