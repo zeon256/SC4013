@@ -4,6 +4,7 @@ import { Logestic } from "logestic";
 import { Pool } from "pg";
 import { readJsonConfig } from "./config";
 import { routes } from "./routes";
+import { authRoute } from "./routes/auth";
 
 (async () => {
 	const cfg = await readJsonConfig();
@@ -21,6 +22,9 @@ import { routes } from "./routes";
 			"/db-healthz",
 			async ({ store: { pool } }) => await routes.dbHealth.fn(pool),
 			routes.dbHealth.schema,
+		).group('/api', (api_grp) =>
+			api_grp
+			.use(authRoute)
 		)
 		.listen(cfg.serverConfig.port);
 
