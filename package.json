@@ -3,15 +3,18 @@
   "version": "1.0.50",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/index.ts"
+    "dev": "bun run --watch src/index.ts",
+    "fmt": "bunx biome format --write ./src"
   },
   "dependencies": {
     "@elysiajs/swagger": "^1.1.1",
     "elysia": "latest",
-    "logestic": "^1.2.3"
+    "logestic": "^1.2.3",
+    "pg": "^8.12.0"
   },
   "devDependencies": {
-    "bun-types": "latest"
+    "bun-types": "latest",
+    "@types/pg": "latest"
   },
   "module": "src/index.js"
 }
