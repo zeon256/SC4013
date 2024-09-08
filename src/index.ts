@@ -21,6 +21,27 @@ import { routes } from "./routes";
 			"/db-healthz",
 			async ({ store: { pool } }) => await routes.dbHealth.fn(pool),
 			routes.dbHealth.schema,
+		).group('/api', (api_grp) =>
+			api_grp.group("/v1", (v1_group) =>
+				v1_group.group("/auth", (auth_group) =>
+					auth_group
+						.post(
+							"/login",
+							async () => await routes.auth.v1.login.fn(),
+							routes.auth.v1.login.schema,
+						)
+						.post(
+							"/logout",
+							async () => await routes.auth.v1.logout.fn(),
+							routes.auth.v1.logout.schema,
+						)
+						.post(
+							"/register",
+							async () => await routes.auth.v1.register.fn(),
+							routes.auth.v1.register.schema,
+						)
+				)
+			)
 		)
 		.listen(cfg.serverConfig.port);
 
