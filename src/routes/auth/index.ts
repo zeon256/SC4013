@@ -18,7 +18,7 @@ const authRouteDef = <T extends string>(
 	})
 		.post(
 			`${config.version}/${config.prefix}/login`,
-			async () => await (authAPI as any)[version].login.fn(),
+			async ({body}) => await (authAPI as any)[version].login.fn(body),
 			(authAPI as any)[version].login.schema,
 		)
 		.post(
