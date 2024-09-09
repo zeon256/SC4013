@@ -44,12 +44,8 @@ async function tryConnectDb(pool: Pool, cfg: Readonly<AppConfig>) {
 					return "Internal Server Error";
 			}
 		})
-		.get(
-			"/db-healthz",
-			async ({ pool }) => await routes.dbHealth.fn(pool),
-			routes.dbHealth.schema,
-		)
-		.group("/api/v1", (apiGrp) => apiGrp.use(authRoute).use(productRoute(pool)))
+		.group("/api/v1", (apiGrp) => apiGrp.use(productRoute(pool)))
+		.use(routes(pool))
 		.listen(cfg.serverConfig.port);
 
 	console.log(
