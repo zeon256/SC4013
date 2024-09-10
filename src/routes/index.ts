@@ -43,5 +43,5 @@ export const routes = (pool: Pool) => new Elysia()
 	.use(statusRoute(pool))
 	.group('/api', (api_grp) =>
 		api_grp
-		.use(authRoute)
+		.use(authRoute(pool))
 	)

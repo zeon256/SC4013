@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@elysiajs/swagger": "^1.1.1",
+    "argon2": "^0.41.1",
     "elysia": "latest",
     "logestic": "^1.2.3",
     "pg": "^8.12.0"
