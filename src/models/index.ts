@@ -1,11 +1,14 @@
-export type DatabaseId = { id: number };
+type DatabaseId = { id: number };
 
-export type DatabaseMetadata = {
+type DatabaseTimestamp = {
+	created_by: number;
+	updated_by: number;
+};
+
+type DatabaseUserAction = {
 	created_at: Date;
 	updated_at: Date;
 	deleted_at: Date | null;
-	created_by: number;
-	updated_by: number;
 };
 
 export type Product = {
@@ -13,4 +16,7 @@ export type Product = {
 	description: string;
 };
 
-export type ProductModel = DatabaseId & Product & DatabaseMetadata;
+export type ProductModel = DatabaseId &
+	Product &
+	DatabaseUserAction &
+	DatabaseTimestamp;
