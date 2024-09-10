@@ -14,7 +14,7 @@ async function tryConnectDb(pool: Pool, cfg: Readonly<AppConfig>) {
 		);
 		const client = await pool.connect();
 		console.log(
-			`Successfully connected to database @ ${cfg.dbConfig.host}:${cfg.dbConfig.port}/${cfg.dbConfig.database}`,
+			`[+] Successfully connected to database @ ${cfg.dbConfig.host}:${cfg.dbConfig.port}/${cfg.dbConfig.database}`,
 		);
 		client.release();
 	} catch (e) {
