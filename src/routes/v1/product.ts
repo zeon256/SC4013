@@ -24,6 +24,7 @@ const productsSchema = {
 		description: "Return an array of product models with metadata",
 	},
 };
+
 export function productRoute(pool: Pool) {
 	return new Elysia({
 		name: "product-routes",
