@@ -32,11 +32,18 @@ async function tryConnectDb(pool: Pool, cfg: Readonly<AppConfig>) {
 		.state("pool", pool)
 		.use(swagger())
 		.use(Logestic.preset("common"))
-		.onError(({ code, error, set }) => {
-			console.error(error);
-			return "Internal Server Error";
+		.onError(({ code, error }) => {
+			switch (code) {
+				case "VALIDATION":
+					return JSON.parse(error.message);
+				case "NOT_FOUND":
+					return "Not Found";
+				case "INTERNAL_SERVER_ERROR":
+					return "Internal Server Error";
+				case "UNKNOWN":
+					return "Internal Server Error";
+			}
 		})
-		.get("/", () => "Hello Elysia")
 		.get(
 			"/db-healthz",
 			async ({ store: { pool } }) => await routes.dbHealth.fn(pool),

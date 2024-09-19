@@ -1,4 +1,4 @@
-import Elysia, { t } from "elysia";
+import Elysia, { t, ValidationError } from "elysia";
 import type { Pool } from "pg";
 import type { ProductModel } from "../../models";
 import {
@@ -6,25 +6,40 @@ import {
 	getProductById as dbGetProductById,
 } from "../../database/product";
 
+const productSchema = t.Object({
+	id: t.Number(),
+	name: t.String(),
+	description: t.String(),
+	created_by: t.Number(),
+	updated_by: t.Number(),
+	created_at: t.Date(),
+	updated_at: t.Date(),
+	deleted_at: t.Nullable(t.Date()),
+});
+
 const productsSchema = {
 	response: {
-		200: t.Array(
-			t.Object({
-				id: t.Number(),
-				name: t.String(),
-				description: t.String(),
-				created_by: t.Number(),
-				updated_by: t.Number(),
-				created_at: t.Date(),
-				updated_at: t.Date(),
-				deleted_at: t.Nullable(t.Date()),
-			}),
-		),
+		200: t.Array(productSchema),
 		500: t.String(),
 	},
 	detail: {
 		summary: "Get Product Models",
 		description: "Return an array of product models with metadata",
+	},
+};
+
+const productIdSchema = {
+	params: t.Object({
+		id: t.Number({ minimum: 1, maximum: Number.MAX_SAFE_INTEGER }),
+	}),
+	response: {
+		200: productSchema,
+		404: t.String(),
+		500: t.String(),
+	},
+	detail: {
+		summary: "Get Product Model By Id",
+		description: "Return a single product",
 	},
 };
 
@@ -39,8 +54,12 @@ export function productRoute(pool: Pool) {
 			async ({ store: { pool } }) => await getProducts(pool),
 			productsSchema,
 		)
-		.get("/:id", async ({ store: { pool }, params }) =>
-			getProductsById(pool, params),
+		.get(
+			"/:id",
+			async ({ store: { pool }, params: { id }, error }) => {
+				return (await getProductsById(pool, id)) ?? error(404, "Not Found");
+			},
+			productIdSchema,
 		);
 }
 
@@ -50,10 +69,7 @@ async function getProducts(pool: Pool): Promise<ProductModel[]> {
 
 async function getProductsById(
 	pool: Pool,
-	params: { id: string },
+	id: number,
 ): Promise<ProductModel | null> {
-	const id = Number.parseInt(params.id);
-	if (Number.isNaN(id)) return null;
-
-	return dbGetProductById(pool, Number(id));
+	return dbGetProductById(pool, id);
 }

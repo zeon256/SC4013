@@ -1,6 +1,8 @@
 import { t } from "elysia";
 import type { Pool } from "pg";
 
+export type RouteErrors = "";
+
 const dbHealthHandlerSchema = {
 	response: {
 		200: t.Object({ message: t.String() }),
