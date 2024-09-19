@@ -1,7 +1,10 @@
 import Elysia, { t } from "elysia";
 import type { Pool } from "pg";
 import type { ProductModel } from "../../models";
-import { getProducts as dbGetProducts } from "../../database/product";
+import {
+	getProducts as dbGetProducts,
+	getProductById as dbGetProductById,
+} from "../../database/product";
 
 const productsSchema = {
 	response: {
@@ -35,9 +38,22 @@ export function productRoute(pool: Pool) {
 			"/",
 			async ({ store: { pool } }) => await getProducts(pool),
 			productsSchema,
+		)
+		.get("/:id", async ({ store: { pool }, params }) =>
+			getProductsById(pool, params),
 		);
 }
 
 async function getProducts(pool: Pool): Promise<ProductModel[]> {
 	return dbGetProducts(pool);
+}
+
+async function getProductsById(
+	pool: Pool,
+	params: { id: string },
+): Promise<ProductModel | null> {
+	const id = Number.parseInt(params.id);
+	if (Number.isNaN(id)) return null;
+
+	return dbGetProductById(pool, Number(id));
 }

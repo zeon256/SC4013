@@ -3,9 +3,7 @@ import type { Pool } from "pg";
 
 const dbHealthHandlerSchema = {
 	response: {
-		200: t.Object({
-			message: t.String(),
-		}),
+		200: t.Object({ message: t.String() }),
 		500: t.String(),
 	},
 	detail: {

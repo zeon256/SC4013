@@ -8,3 +8,16 @@ export async function getProducts(pool: Pool): Promise<ProductModel[]> {
 
 	return result.rows;
 }
+
+export async function getProductById(
+	pool: Pool,
+	id: number,
+): Promise<ProductModel | null> {
+	const result = await pool.query<ProductModel>({
+		text: "SELECT * FROM Product WHERE id = $1 AND deleted_at IS NULL;",
+		values: [id],
+	});
+
+	if (result.rowCount === 0) return null;
+	return result.rows[0];
+}
