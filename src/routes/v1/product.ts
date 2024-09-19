@@ -43,6 +43,53 @@ const productIdSchema = {
 	},
 };
 
+const postProductSchema = {
+	body: t.Object({
+		name: t.String(),
+		description: t.String(),
+	}),
+	response: {
+		200: productSchema,
+		500: t.String(),
+	},
+	detail: {
+		summary: "Create Product",
+		description: "Return a created product",
+	},
+};
+
+const updateProductSchema = {
+	params: t.Object({
+		id: t.Number({ minimum: 1, maximum: Number.MAX_SAFE_INTEGER }),
+	}),
+	body: t.Object({
+		name: t.String(),
+		description: t.String(),
+	}),
+	response: {
+		200: productSchema,
+		500: t.String(),
+	},
+	detail: {
+		summary: "Update Product By Id",
+		description: "Return the updated product",
+	},
+};
+
+const deleteProductSchema = {
+	params: t.Object({
+		id: t.Number({ minimum: 1, maximum: Number.MAX_SAFE_INTEGER }),
+	}),
+	response: {
+		200: t.Null(),
+		500: t.String(),
+	},
+	detail: {
+		summary: "Delete Product By Id",
+		description: "Return the deleted product",
+	},
+};
+
 export function productRoute(pool: Pool) {
 	return new Elysia({
 		name: "product-routes",
@@ -60,6 +107,23 @@ export function productRoute(pool: Pool) {
 				return (await getProductsById(pool, id)) ?? error(404, "Not Found");
 			},
 			productIdSchema,
+		)
+		.post(
+			"/",
+			async ({ store: { pool }, body }) => await postProduct(pool, body),
+			postProductSchema,
+		)
+		.put(
+			"/:id",
+			async ({ store: { pool }, body, params: { id } }) =>
+				await updateProductById(pool, id, body),
+			updateProductSchema,
+		)
+		.delete(
+			"/:id",
+			async ({ store: { pool }, params: { id } }) =>
+				await deleteProductById(pool, id),
+			deleteProductSchema,
 		);
 }
 
@@ -72,4 +136,44 @@ async function getProductsById(
 	id: number,
 ): Promise<ProductModel | null> {
 	return dbGetProductById(pool, id);
+}
+
+async function postProduct(
+	pool: Pool,
+	product: Pick<ProductModel, "name" | "description">,
+): Promise<ProductModel> {
+	// TODO: impl db, requires auth to be done i think
+	return {
+		id: 9000,
+		name: product.name,
+		description: product.description,
+		created_by: 1,
+		updated_by: 1,
+		created_at: new Date(),
+		updated_at: new Date(),
+		deleted_at: null,
+	};
+}
+
+async function updateProductById(
+	pool: Pool,
+	id: number,
+	{ name, description }: Pick<ProductModel, "name" | "description">,
+): Promise<ProductModel> {
+	// TODO: impl db, requires auth to be done i think
+	return {
+		id: id,
+		name: name,
+		description: description,
+		created_by: 1,
+		updated_by: 1,
+		created_at: new Date(),
+		updated_at: new Date(),
+		deleted_at: null,
+	};
+}
+
+async function deleteProductById(pool: Pool, id: number): Promise<null> {
+	// TODO: impl db, requires auth to be done i think
+	return null;
 }
