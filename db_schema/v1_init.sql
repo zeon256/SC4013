@@ -1,22 +1,28 @@
 -- Create User table
-CREATE TABLE "User" (
-    ID SERIAL PRIMARY KEY,
-    Email VARCHAR(100) NOT NULL,
-    Password VARCHAR(1000) NOT NULL,
-    Salt VARCHAR(32) NOT NULL,
-    Last_password_change TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    Created_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    Last_login TIMESTAMP,
-    Lockout CHAR(1) NOT NULL DEFAULT 'N',
-    IsAdmin CHAR(1) NOT NULL DEFAULT 'N'
+CREATE TABLE "User"
+(
+    id                   SERIAL PRIMARY KEY,
+    email                VARCHAR(100)  NOT NULL,
+    password             VARCHAR(1000) NOT NULL,
+    salt                 VARCHAR(32)   NOT NULL,
+    last_password_change TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_login           TIMESTAMPTZ,
+    lockout              BOOLEAN       NOT NULL DEFAULT FALSE,
+    is_admin             BOOLEAN       NOT NULL DEFAULT FALSE,
+    created_at           TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at           TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at           TIMESTAMPTZ   NULL     DEFAULT NULL
 );
 
 -- Create Product table
-CREATE TABLE "Product" (
-    ID SERIAL PRIMARY KEY,
-    Name VARCHAR(100) NOT NULL,
-    Description VARCHAR(1000),
-    Updated_by INT REFERENCES "User"(ID) ON DELETE SET NULL,
-    Created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    Updated_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE Product
+(
+    id          SERIAL PRIMARY KEY,
+    name        VARCHAR(100) NOT NULL,
+    description VARCHAR(1000),
+    created_by   INT          REFERENCES "User" (ID) ON DELETE SET NULL,
+    updated_by   INT          REFERENCES "User" (ID) ON DELETE SET NULL,
+    created_at   TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at   TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at   TIMESTAMPTZ  NULL     DEFAULT NULL
 );

@@ -1,9 +1,13 @@
 import { t } from "elysia";
 import type { Pool } from "pg";
-import { authRoute } from "./auth";
+
+export type RouteErrors = "";
 
 const dbHealthHandlerSchema = {
-	response: { 200: t.String(), 500: t.String() },
+	response: {
+		200: t.Object({ message: t.String() }),
+		500: t.String(),
+	},
 	detail: {
 		summary: "Check the health status of the database",
 		description:
@@ -11,16 +15,19 @@ const dbHealthHandlerSchema = {
 	},
 };
 
-async function dbHealthHandler(pool: Pool): Promise<string> {
-	const result = await pool.query<string[]>(
+type DbHealthMessage = { message: string };
+
+async function dbHealthHandler(pool: Pool): Promise<DbHealthMessage> {
+	const result = await pool.query<DbHealthMessage>(
 		"SELECT 'Hello, World!' AS message;",
 	);
-	return result.rows[0][0];
+
+	return result.rows[0];
 }
 
 export const routes = {
 	dbHealth: {
 		fn: dbHealthHandler,
 		schema: dbHealthHandlerSchema,
-	}
+	},
 } as const;
