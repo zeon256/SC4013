@@ -68,6 +68,7 @@ const updateProductSchema = {
 	}),
 	response: {
 		200: productSchema,
+		404: t.String(),
 		500: t.String(),
 	},
 	detail: {
@@ -82,6 +83,7 @@ const deleteProductSchema = {
 	}),
 	response: {
 		200: t.Null(),
+		404: t.String(),
 		500: t.String(),
 	},
 	detail: {
@@ -95,34 +97,29 @@ export function productRoute(pool: Pool) {
 		name: "product-routes",
 		prefix: "/products",
 	})
-		.state("pool", pool)
-		.get(
-			"/",
-			async ({ store: { pool } }) => await getProducts(pool),
-			productsSchema,
-		)
+		.decorate("pool", pool)
+		.get("/", async ({ pool }) => await getProducts(pool), productsSchema)
 		.get(
 			"/:id",
-			async ({ store: { pool }, params: { id }, error }) => {
-				return (await getProductsById(pool, id)) ?? error(404, "Not Found");
-			},
+			async ({ pool, params: { id }, error }) =>
+				(await getProductsById(pool, id)) ?? error(404, "Not Found"),
 			productIdSchema,
 		)
 		.post(
 			"/",
-			async ({ store: { pool }, body }) => await postProduct(pool, body),
+			async ({ pool, body }) => await postProduct(pool, body),
 			postProductSchema,
 		)
 		.put(
 			"/:id",
-			async ({ store: { pool }, body, params: { id } }) =>
-				await updateProductById(pool, id, body),
+			async ({ pool, body, params: { id }, error }) =>
+				(await updateProductById(pool, id, body)) ?? error(404, "Not Found"),
 			updateProductSchema,
 		)
 		.delete(
 			"/:id",
-			async ({ store: { pool }, params: { id } }) =>
-				await deleteProductById(pool, id),
+			async ({ pool, params: { id }, error }) =>
+				(await deleteProductById(pool, id)) ?? error(404, "Not Found"),
 			deleteProductSchema,
 		);
 }
@@ -159,7 +156,7 @@ async function updateProductById(
 	pool: Pool,
 	id: number,
 	{ name, description }: Pick<ProductModel, "name" | "description">,
-): Promise<ProductModel> {
+): Promise<ProductModel | null> {
 	// TODO: impl db, requires auth to be done i think
 	return {
 		id: id,

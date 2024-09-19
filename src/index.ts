@@ -29,7 +29,7 @@ async function tryConnectDb(pool: Pool, cfg: Readonly<AppConfig>) {
 	await tryConnectDb(pool, cfg);
 
 	const app = new Elysia()
-		.state("pool", pool)
+		.decorate("pool", pool)
 		.use(swagger())
 		.use(Logestic.preset("common"))
 		.onError(({ code, error }) => {
@@ -46,7 +46,7 @@ async function tryConnectDb(pool: Pool, cfg: Readonly<AppConfig>) {
 		})
 		.get(
 			"/db-healthz",
-			async ({ store: { pool } }) => await routes.dbHealth.fn(pool),
+			async ({ pool }) => await routes.dbHealth.fn(pool),
 			routes.dbHealth.schema,
 		)
 		.group("/api/v1", (apiGrp) => apiGrp.use(authRoute).use(productRoute(pool)))
