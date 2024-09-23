@@ -95,7 +95,7 @@ const registerSchema = {
 		confirm_email: emailFormat,
 		password: passwordFormat,
 		confirm_password: passwordFormat
-	})/*,
+	}),
 	async beforeHandle({ set, body }: { set: Response, body: any }) {
 		if (body.email !== body.confirm_email) {
 			return new Response('email does not match confirm email',
@@ -104,7 +104,7 @@ const registerSchema = {
 			return new Response('password does not match confirm password',
 				{ status: 500 });
 		}
-	}*/
+	}
 };
 
 async function registerHandler(body: any, pool: Pool): Promise<string> {
