@@ -1,8 +1,8 @@
-import { Context, t } from "elysia";
+import { t } from "elysia";
 import { Pool } from "pg";
 import { randomBytes } from 'crypto';
 import argon2 from 'argon2';
-import { UserDB } from "../../database";
+import { getUserByEmail, insertUser } from "../../database/user";
 
 /*
 At least 1 special character
@@ -24,6 +24,7 @@ const emailFormat = t.String({
 
 const passwordFormat = t.String({
 	minLength: 10,
+	maxLength: 64,
 	error: "password requires minimum length of 10"
 })
 
@@ -34,7 +35,10 @@ const generateSalt = (length = 16) => {
 
 /*Implementation*/
 const loginSchema = {
-	response: { 200: t.String(), 500: t.String() },
+	response: { 
+		200: t.String(), 
+		500: t.String(),
+	},
 	detail: {
 		summary: "Authenticate the user",
 		description:
@@ -51,7 +55,7 @@ const loginSchema = {
 
 async function loginHandler(pool: Pool, body: any): Promise<string> {
 	//TODO: implement login logic
-	const existing_acc = await UserDB(pool).GetUser(body.email);
+	const existing_acc = await getUserByEmail(pool, body.email);
 	if (existing_acc === null){
 		return "Account does not exist";
 	}
@@ -59,7 +63,10 @@ async function loginHandler(pool: Pool, body: any): Promise<string> {
 }
 
 const logoutSchema = {
-	response: { 200: t.String(), 500: t.String() },
+	response: { 
+		200: t.String(), 
+		500: t.String() 
+	},
 	detail: {
 		summary: "Logout the user",
 		description:
@@ -73,7 +80,11 @@ async function logoutHandler(): Promise<string> {
 }
 
 const registerSchema = {
-	response: { 200: t.String(), 500: t.String() },
+	response: { 
+		200: t.String(), 
+		500: t.String(),
+		422: t.String(),
+	},
 	detail: {
 		summary: "Register an account",
 		description:
@@ -84,7 +95,7 @@ const registerSchema = {
 		confirm_email: emailFormat,
 		password: passwordFormat,
 		confirm_password: passwordFormat
-	}),
+	})/*,
 	async beforeHandle({ set, body }: { set: Response, body: any }) {
 		if (body.email !== body.confirm_email) {
 			return new Response('email does not match confirm email',
@@ -93,17 +104,17 @@ const registerSchema = {
 			return new Response('password does not match confirm password',
 				{ status: 500 });
 		}
-	}
+	}*/
 };
 
 async function registerHandler(body: any, pool: Pool): Promise<string> {
-	const existing_acc = await UserDB(pool).GetUser(body.email);
+	const existing_acc = await getUserByEmail(pool, body.email);
 	if (existing_acc !== null){
 		return "Account already exist";
 	}
 	const salt = generateSalt();
 	const hash_pw = await argon2.hash(body.password + salt);
-	const user_id = await UserDB(pool).InsertUser(body.email, hash_pw, salt);
+	const user_id = await insertUser(pool, body.email, hash_pw, salt);
 	return String(user_id);
 }
 

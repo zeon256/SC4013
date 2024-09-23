@@ -20,3 +20,18 @@ export type ProductModel = DatabaseId &
 	Product &
 	DatabaseUserAction &
 	DatabaseTimestamp;
+
+export type User = {
+	email: string;
+	password: string;
+	salt: string;
+	last_password_change: Date;
+	last_login: Date;
+	failed_login_attempt_count: number;
+	lockout: boolean;
+	is_admin: boolean;
+};
+
+export type UserModel = DatabaseId &
+	User &
+	DatabaseUserAction;
