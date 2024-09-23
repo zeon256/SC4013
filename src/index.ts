@@ -4,7 +4,6 @@ import { Logestic } from "logestic";
 import { Pool } from "pg";
 import { type AppConfig, readJsonConfig } from "./config";
 import { routes } from "./routes";
-import { authRoute } from "./routes/auth";
 import { productRoute } from "./routes/v1/product";
 
 async function tryConnectDb(pool: Pool, cfg: Readonly<AppConfig>) {

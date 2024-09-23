@@ -32,16 +32,15 @@ const dbHealth = {
 }
 
 const statusRoute = (pool: Pool) => new Elysia()
-	.state("pool", pool)
+	.decorate("pool", pool)
 	.get(
 		"/db-healthz",
-		async ({ store: { pool } }) => await dbHealth.fn(pool),
+		async ({ pool }) => await dbHealth.fn(pool),
 		dbHealth.schema,
 	)
 
 export const routes = (pool: Pool) => new Elysia()
 	.use(statusRoute(pool))
 	.group('/api', (api_grp) =>
-		api_grp
-		.use(authRoute(pool))
+		api_grp.use(authRoute(pool))
 	)

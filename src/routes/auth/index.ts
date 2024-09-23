@@ -16,7 +16,7 @@ const authRouteDef = <T extends string>(
 
 	return new Elysia({
 		name: 'auth-plugin',
-		seed: config
+		seed: config.version + config.prefix
 	})
 	.state("pool", config.pool)
 		.post(
