@@ -5,6 +5,7 @@ import { Pool } from "pg";
 import { type AppConfig, readJsonConfig } from "./config";
 import { routes } from "./routes";
 import { productRoute } from "./routes/v1/product";
+import jwt from "@elysiajs/jwt";
 
 async function tryConnectDb(pool: Pool, cfg: Readonly<AppConfig>) {
 	try {
@@ -27,10 +28,15 @@ async function tryConnectDb(pool: Pool, cfg: Readonly<AppConfig>) {
 	const pool = new Pool(cfg.dbConfig);
 	await tryConnectDb(pool, cfg);
 
+	const jwt_obj = jwt({
+		name: 'jwt',
+		secret: process.env.JWT_SECRET!,
+	});	
 	const app = new Elysia()
 		.decorate("pool", pool)
 		.use(swagger())
 		.use(Logestic.preset("common"))
+		.use(jwt_obj)
 		.onError(({ code, error }) => {
 			switch (code) {
 				case "VALIDATION":
@@ -44,7 +50,7 @@ async function tryConnectDb(pool: Pool, cfg: Readonly<AppConfig>) {
 			}
 		})
 		.group("/api/v1", (apiGrp) => apiGrp.use(productRoute(pool)))
-		.use(routes(pool))
+		.use(routes(pool, jwt_obj))
 		.listen(cfg.serverConfig.port);
 
 	console.log(

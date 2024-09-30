@@ -1,9 +1,10 @@
-import { error, t } from "elysia";
+import Elysia, { Cookie, error, t } from "elysia";
 import { Pool } from "pg";
 import { randomBytes } from 'crypto';
 import argon2 from 'argon2';
 import { getUserByEmail, insertUser } from "../../database/user";
-import { type ValueError, type TypeCheck } from '@sinclair/typebox/compiler';
+import { type ValueError } from '@sinclair/typebox/compiler';
+import jwt from "@elysiajs/jwt";
 
 /*
 At least 1 special character
@@ -12,22 +13,28 @@ At least 1 lowercase character
 At least 1 numeric character
 
 TODO: Create unit test for regex
-Note: current regex not working
 */
 const passwordRegex = /^(?=.*[!@#$%^&*(),.?":{}|<>])(?=.*[A-Z])(?=.*[a-z])(?=.*\d).+$/gm;
 
 type LoginResponse = {
+	status: number;
 	message: string;
 };
 
 const LoginResultSchema = t.Object({
+	status: t.Number(),
 	message: t.String()
 });
 
 /*Formatting*/
 const emailFormat = t.String({
 	format: 'email',
-	error: 'Invalid Email',
+	error({errors} : {errors: ValueError[]}) : LoginResponse {
+		return {
+			status: 422,
+			message: errors[0].message
+		} as LoginResponse;
+	},
 	pattern: '^[A-Za-z0-9]*@e.ntu.edu.sg$'
 })
 
@@ -35,12 +42,24 @@ const passwordFormat = t.String({
 	minLength: 10,
 	maxLength: 64,
 	pattern: passwordRegex.source,
-	error({errors} : {errors: ValueError[]}) {
-		console.log("TEST")
+	error({errors} : {errors: ValueError[]}) : LoginResponse {
 		return {
+			status: 422,
 			message: errors[0].message
-		};
+		} as LoginResponse;
 	}
+})
+
+const CookieSchema = t.Cookie({
+	jwt_token: t.String({
+		minLength: 10,
+		error({errors} : {errors: ValueError[]}) : LoginResponse {
+			return {
+				status: 422,
+				message: errors[0].message
+			} as LoginResponse;
+		}
+	})
 })
 
 /*Misc*/
@@ -51,8 +70,9 @@ const generateSalt = (length = 16) => {
 /*Implementation*/
 const loginSchema = {
 	response: { 
-		200: t.String(), 
+		200: LoginResultSchema, 
 		500: t.String(),
+		422: LoginResultSchema,
 	},
 	detail: {
 		summary: "Authenticate the user",
@@ -62,24 +82,52 @@ const loginSchema = {
 	body: t.Object({
 		email: emailFormat,
 		password: passwordFormat
-	},
-	{
-		error: "Invalid request"
 	})
 };
 
-async function loginHandler(pool: Pool, body: any): Promise<string> {
+async function loginHandler(
+	pool: Pool, 
+	body: any,
+	jwt_token: Cookie<string | undefined>,
+	jwt_obj: any
+): Promise<any> {
 	//TODO: implement login logic
 	const existing_acc = await getUserByEmail(pool, body.email);
 	if (existing_acc === null){
-		return "Account does not exist";
+		return error(422, { 
+			status: 422,
+			message: "Account does not exist"
+		} as LoginResponse);
 	}
-	return "TEST";
+	try {
+		const match = await argon2.verify(existing_acc.password, body.password + existing_acc.salt);
+		if (!match){
+			return { 
+				status: 200,
+				message: "Invalid email or password"
+			} as LoginResponse;
+		}
+	} catch (errorMsg) {
+		return error(500, { 
+			status: 500,
+			message: errorMsg
+		} as LoginResponse);
+	}
+	jwt_token.set({
+		value: await jwt_obj.sign({ email: existing_acc.email }),
+		httpOnly: true,
+		maxAge: 7 * 86400,
+		path: '/',
+	});
+	return { 
+		status: 200,
+		message: "Success"
+	} as LoginResponse;
 }
 
 const logoutSchema = {
 	response: { 
-		200: t.String(), 
+		200: LoginResultSchema, 
 		500: t.String() 
 	},
 	detail: {
@@ -87,11 +135,21 @@ const logoutSchema = {
 		description:
 			"Performs a logout for the user and returns the status. If an error occurs, a 500 status is returned.",
 	},
+	cooke: CookieSchema,
 };
 
-async function logoutHandler(): Promise<string> {
-	//TODO: implement logout logic
-	return "TEST";
+async function logoutHandler(
+	jwt_token: Cookie<string>
+): Promise<LoginResponse> {
+	jwt_token.set({
+		value: "",
+		httpOnly: true,
+		maxAge: 0,
+	})
+	return { 
+		status: 200,
+		message: "Success"
+	} as LoginResponse;
 }
 
 const registerSchema = {
@@ -114,10 +172,12 @@ const registerSchema = {
 	async beforeHandle({ set, body }: { set: Response, body: any }): Promise<any | void> {
 		if (body.email !== body.confirm_email) {
 			return error(422, {
+				status: 422,
 				message: 'Email does not match confirm email'
 			} as LoginResponse);
 		} else if (body.password !== body.confirm_password) {
 			return error(422, {
+				status: 422,
 				message: 'Password does not match confirm password'
 			} as LoginResponse);
 		}
@@ -125,13 +185,14 @@ const registerSchema = {
 };
 
 async function registerHandler(
-	body: any, 
-	pool: Pool
+	pool: Pool, 
+	body: any
 ): Promise<LoginResponse | any> {
 	const existing_acc = await getUserByEmail(pool, body.email);
 	if (existing_acc !== null)
 	{
 		return error(422, {
+			status: 422,
 			message: "Account already exist"
 		} as LoginResponse);
 	}
@@ -139,8 +200,9 @@ async function registerHandler(
 	const hash_pw = await argon2.hash(body.password + salt);
 	const user_id = await insertUser(pool, body.email, hash_pw, salt);
 	return {
+		status: 422,
 		message:`Success, Account Id ${user_id}`
-	};
+	} as LoginResponse;
 }
 
 export const v1 = {
