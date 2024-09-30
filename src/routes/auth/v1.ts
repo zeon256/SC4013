@@ -1,8 +1,9 @@
-import { t } from "elysia";
+import { error, t } from "elysia";
 import { Pool } from "pg";
 import { randomBytes } from 'crypto';
 import argon2 from 'argon2';
 import { getUserByEmail, insertUser } from "../../database/user";
+import { type ValueError, type TypeCheck } from '@sinclair/typebox/compiler';
 
 /*
 At least 1 special character
@@ -13,7 +14,15 @@ At least 1 numeric character
 TODO: Create unit test for regex
 Note: current regex not working
 */
-const passwordRegex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$";
+const passwordRegex = /^(?=.*[!@#$%^&*(),.?":{}|<>])(?=.*[A-Z])(?=.*[a-z])(?=.*\d).+$/gm;
+
+type LoginResponse = {
+	message: string;
+};
+
+const LoginResultSchema = t.Object({
+	message: t.String()
+});
 
 /*Formatting*/
 const emailFormat = t.String({
@@ -25,7 +34,13 @@ const emailFormat = t.String({
 const passwordFormat = t.String({
 	minLength: 10,
 	maxLength: 64,
-	error: "password requires minimum length of 10"
+	pattern: passwordRegex.source,
+	error({errors} : {errors: ValueError[]}) {
+		console.log("TEST")
+		return {
+			message: errors[0].message
+		};
+	}
 })
 
 /*Misc*/
@@ -81,9 +96,9 @@ async function logoutHandler(): Promise<string> {
 
 const registerSchema = {
 	response: { 
-		200: t.String(), 
+		200: LoginResultSchema, 
 		500: t.String(),
-		422: t.String(),
+		422: LoginResultSchema,
 	},
 	detail: {
 		summary: "Register an account",
@@ -96,26 +111,36 @@ const registerSchema = {
 		password: passwordFormat,
 		confirm_password: passwordFormat
 	}),
-	async beforeHandle({ set, body }: { set: Response, body: any }) {
+	async beforeHandle({ set, body }: { set: Response, body: any }): Promise<any | void> {
 		if (body.email !== body.confirm_email) {
-			return new Response('email does not match confirm email',
-				{ status: 500 });
+			return error(422, {
+				message: 'Email does not match confirm email'
+			} as LoginResponse);
 		} else if (body.password !== body.confirm_password) {
-			return new Response('password does not match confirm password',
-				{ status: 500 });
+			return error(422, {
+				message: 'Password does not match confirm password'
+			} as LoginResponse);
 		}
 	}
 };
 
-async function registerHandler(body: any, pool: Pool): Promise<string> {
+async function registerHandler(
+	body: any, 
+	pool: Pool
+): Promise<LoginResponse | any> {
 	const existing_acc = await getUserByEmail(pool, body.email);
-	if (existing_acc !== null){
-		return "Account already exist";
+	if (existing_acc !== null)
+	{
+		return error(422, {
+			message: "Account already exist"
+		} as LoginResponse);
 	}
 	const salt = generateSalt();
 	const hash_pw = await argon2.hash(body.password + salt);
 	const user_id = await insertUser(pool, body.email, hash_pw, salt);
-	return String(user_id);
+	return {
+		message:`Success, Account Id ${user_id}`
+	};
 }
 
 export const v1 = {
