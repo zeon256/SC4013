@@ -39,8 +39,8 @@ const statusRoute = (pool: Pool) => new Elysia()
 		dbHealth.schema,
 	)
 
-export const routes = (pool: Pool, jwt_obj: any) => new Elysia()
+export const routes = (pool: Pool) => new Elysia()
 	.use(statusRoute(pool))
 	.group('/api', (api_grp) =>
-		api_grp.use(authRoute(pool, jwt_obj))
+		api_grp.use(authRoute(pool))
 	)

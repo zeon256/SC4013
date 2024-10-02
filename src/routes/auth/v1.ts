@@ -1,10 +1,10 @@
-import Elysia, { Cookie, error, t } from "elysia";
+import { Cookie, error, t } from "elysia";
 import { Pool } from "pg";
 import { randomBytes } from 'crypto';
 import argon2 from 'argon2';
 import { getUserByEmail, insertUser } from "../../database/user";
 import { type ValueError } from '@sinclair/typebox/compiler';
-import jwt from "@elysiajs/jwt";
+import { verifyJWTMiddleware } from "./jwt";
 
 /*
 At least 1 special character
@@ -116,36 +116,9 @@ async function loginHandler(
 	jwt_token.set({
 		value: await jwt_obj.sign({ email: existing_acc.email }),
 		httpOnly: true,
-		maxAge: 7 * 86400,
+		maxAge: 2 * 24 * 60 * 60, // 2 days
 		path: '/',
 	});
-	return { 
-		status: 200,
-		message: "Success"
-	} as LoginResponse;
-}
-
-const logoutSchema = {
-	response: { 
-		200: LoginResultSchema, 
-		500: t.String() 
-	},
-	detail: {
-		summary: "Logout the user",
-		description:
-			"Performs a logout for the user and returns the status. If an error occurs, a 500 status is returned.",
-	},
-	cooke: CookieSchema,
-};
-
-async function logoutHandler(
-	jwt_token: Cookie<string>
-): Promise<LoginResponse> {
-	jwt_token.set({
-		value: "",
-		httpOnly: true,
-		maxAge: 0,
-	})
 	return { 
 		status: 200,
 		message: "Success"
@@ -205,17 +178,45 @@ async function registerHandler(
 	} as LoginResponse;
 }
 
+const logoutSchema = {
+	response: { 
+		200: LoginResultSchema, 
+		500: t.String() 
+	},
+	detail: {
+		summary: "Logout the user",
+		description:
+			"Performs a logout for the user and returns the status. If an error occurs, a 500 status is returned.",
+	},
+	cooke: CookieSchema,
+	beforeHandle: verifyJWTMiddleware
+};
+
+async function logoutHandler(
+	jwt_token: Cookie<string>
+): Promise<LoginResponse> {
+	jwt_token.set({
+		value: "",
+		httpOnly: true,
+		maxAge: 0,
+	})
+	return { 
+		status: 200,
+		message: "Success"
+	} as LoginResponse;
+}
+
 export const v1 = {
 	login: {
 		fn: loginHandler,
 		schema: loginSchema,
 	},
-	logout: {
-		fn: logoutHandler,
-		schema: logoutSchema,
-	},
 	register: {
 		fn: registerHandler,
 		schema: registerSchema
 	},
+	logout: {
+		fn: logoutHandler,
+		schema: logoutSchema,
+	}
 } as const;
