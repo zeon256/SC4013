@@ -3,8 +3,9 @@ import { Elysia } from "elysia";
 import { Logestic } from "logestic";
 import { Pool } from "pg";
 import { type AppConfig, readJsonConfig } from "./config";
-import { routes } from "./routes";
 import { productRoute } from "./routes/v1/product";
+import { authRoute } from "./routes/v1/auth";
+import { statusRoute } from "./routes";
 
 async function tryConnectDb(pool: Pool, cfg: Readonly<AppConfig>) {
 	try {
@@ -36,15 +37,17 @@ async function tryConnectDb(pool: Pool, cfg: Readonly<AppConfig>) {
 				case "VALIDATION":
 					return JSON.parse(error.message);
 				case "NOT_FOUND":
-					return "Not Found";
+					return error.message;
 				case "INTERNAL_SERVER_ERROR":
 					return "Internal Server Error";
 				case "UNKNOWN":
 					return "Internal Server Error";
 			}
 		})
-		.group("/api/v1", (apiGrp) => apiGrp.use(productRoute(pool)))
-		.use(routes(pool))
+		.use(statusRoute(pool))
+		.group("/api/v1", (apiGrp) =>
+			apiGrp.use(productRoute(pool)).use(authRoute(pool)),
+		)
 		.listen(cfg.serverConfig.port);
 
 	console.log(

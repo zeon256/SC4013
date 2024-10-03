@@ -1,6 +1,5 @@
 import { Elysia, t } from "elysia";
 import type { Pool } from "pg";
-import { authRoute } from "./auth";
 
 export type RouteErrors = "";
 
@@ -26,21 +25,11 @@ async function dbHealthHandler(pool: Pool): Promise<DbHealthMessage> {
 	return result.rows[0];
 }
 
-const dbHealth = {
-	fn: dbHealthHandler,
-	schema: dbHealthHandlerSchema,
-}
-
-const statusRoute = (pool: Pool) => new Elysia()
-	.decorate("pool", pool)
-	.get(
-		"/db-healthz",
-		async ({ pool }) => await dbHealth.fn(pool),
-		dbHealth.schema,
-	)
-
-export const routes = (pool: Pool) => new Elysia()
-	.use(statusRoute(pool))
-	.group('/api', (api_grp) =>
-		api_grp.use(authRoute(pool))
-	)
+export const statusRoute = (pool: Pool) =>
+	new Elysia()
+		.decorate("pool", pool)
+		.get(
+			"/db-healthz",
+			async ({ pool }) => await dbHealthHandler(pool),
+			dbHealthHandlerSchema,
+		);
