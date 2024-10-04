@@ -24,7 +24,7 @@ type Jwt = {
 };
 
 type ElysiaSet = {
-	header: HTTPHeaders;
+	headers: HTTPHeaders;
 	status?: number | keyof StatusMap;
 	redirect?: string;
 	cookie?: Cookie<string | ElysiaCookie>;
