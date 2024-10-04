@@ -13,6 +13,11 @@ import { getUserByEmail, insertUser } from "../../database/user";
 import jwt, { type JWTPayloadSpec } from "@elysiajs/jwt";
 import type { HTTPHeaders } from "elysia/dist/types";
 import type { ElysiaCookie } from "elysia/dist/cookies";
+import {
+	AccountAlreadyExistError,
+	BadRequestError,
+	InvalidAccountCredentialsError,
+} from "./errors";
 
 type Jwt = {
 	readonly sign: (
@@ -46,33 +51,6 @@ export async function verifyJWTMiddleware({
 	}
 }
 
-export class InvalidAccountCredentialsError extends Error {
-	code = "FORBIDDEN";
-	status = 401;
-
-	constructor(message?: string) {
-		super(message ?? "FORBIDDEN");
-	}
-}
-
-export class AccountAlreadyExistError extends Error {
-	code = "CONFLICT";
-	status = 409;
-
-	constructor(message?: string) {
-		super(message ?? "CONFLICT");
-	}
-}
-
-export class BadRequestError extends Error {
-	code = "BAD_REQUEST";
-	status = 400;
-
-	constructor(message?: string) {
-		super(message ?? "BAD_REQUEST");
-	}
-}
-
 /*
 At least 1 special character
 At least 1 uppercase character
@@ -96,12 +74,18 @@ const generateSalt = (length = 16) => {
 const emailFormat = t.String({
 	format: "email",
 	pattern: "^[A-Za-z0-9]*@e.ntu.edu.sg$",
+	error({ errors }) {
+		throw new BadRequestError(errors[0].message);
+	},
 });
 
 const passwordFormat = t.String({
 	minLength: 10,
 	maxLength: 64,
 	pattern: passwordRegex.source,
+	error({ errors }) {
+		throw new BadRequestError(errors[0].message);
+	},
 });
 
 const loginBody = t.Object({ email: emailFormat, password: passwordFormat });
