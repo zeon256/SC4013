@@ -86,7 +86,7 @@ const passwordRegex =
 
 type LoginResponse = { message: string };
 
-const LoginResultSchema = t.Object({ message: t.String() });
+const loginResultSchema = t.Object({ message: t.String() });
 
 /*Misc*/
 const generateSalt = (length = 16) => {
@@ -106,15 +106,15 @@ const passwordFormat = t.String({
 
 const loginBody = t.Object({ email: emailFormat, password: passwordFormat });
 
-const CookieSchema = t.Cookie({
+const cookieSchema = t.Cookie({
 	jwt_token: t.String({ minLength: 10 }),
 });
 
 export const loginSchema = {
 	response: {
-		200: LoginResultSchema,
+		200: loginResultSchema,
 		500: t.String(),
-		422: LoginResultSchema,
+		422: loginResultSchema,
 	},
 	detail: {
 		summary: "Authenticate the user",
@@ -133,11 +133,11 @@ const registerBody = t.Object({
 
 const registerSchema = {
 	response: {
-		200: LoginResultSchema,
+		200: loginResultSchema,
 		409: t.String(),
 		400: t.String(),
 		500: t.String(),
-		422: LoginResultSchema,
+		422: loginResultSchema,
 	},
 	detail: {
 		summary: "Register an account",
@@ -149,7 +149,7 @@ const registerSchema = {
 
 const logoutSchema = {
 	response: {
-		200: LoginResultSchema,
+		200: loginResultSchema,
 		401: t.String(),
 		500: t.String(),
 	},
@@ -158,7 +158,7 @@ const logoutSchema = {
 		description:
 			"Performs a logout for the user and returns the status. If an error occurs, a 500 status is returned.",
 	},
-	cookie: CookieSchema,
+	cookie: cookieSchema,
 	beforeHandle: verifyJWTMiddleware,
 };
 
