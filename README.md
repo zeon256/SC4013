@@ -8,15 +8,19 @@
 ## Roadmap
 - [ ] Authentication JWT
 - [ ] Authorization and Access Control
-- [ ] Input Validation and Sanitization
-- [ ] Rate Limiting and Throttling
 - [ ] Secure Error Handling and Logging
 - [ ] HTTPS Enforcement
-- [ ] OpenAPI Spec
+- [ ] Architecture Diagram
+- [x] OpenAPI Spec with Swagger
 - [ ] API Design and Documentation
-- [ ] Using OpenAPI/Swagger
 - [ ] Implementation of Core Functionality
-- [ ] Integration of Security Features
+- [ ] Integration of Security Features    
+    - [x] GPG Signed commits
+    - [x] Review Process
+    - [ ] Error thrown reduction
+    - [ ] Database R/W Account segregation
+    - [x] Input Validation and Sanitization
+    - [ ] Rate Limiting and Throttling
 - [ ] Testing
   - [ ] Unit Tests
   - [ ] Integration Tests
@@ -35,6 +39,22 @@
 - [ ] Monitoring with Datadog
 - [x] Dockerfile
 - [ ] CI/CD DevSecOps
+    - [x] Semantic Release
+    - [ ] CD to Staging Environment
+    - [ ] SAST
+    - [ ] Container Scanning
+- [ ] Endpoints
+    - [x] `GET /api/v1/products`
+    - [x] `GET /api/v1/products/:id`
+    - [ ] `PUT /api/v1/products`
+    - [ ] `POST /api/v1/products`
+    - [ ] `POST /api/v1/products`
+    - [x] `POST /api/v1/auth/login`
+    - [x] `POST /api/v1/auth/register`
+    - [x] `POST /api/v1/auth/logout`
+
+# Architecture
+TODO
 
 ## Setup
 To install dependencies:
@@ -56,3 +76,4 @@ Open http://localhost:3000/ with your browser to see the result.
 # Contribution
 - Ensure that commit messages follow [Angular Commit Messages](https://gist.github.com/brianclements/841ea7bffdb01346392c)
 - Create Merge Request with branch titled according to type. Example: `feat/jwt-impl` or `docs/update-readme`
+- Ensure that commits as signed
