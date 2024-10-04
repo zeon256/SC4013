@@ -158,7 +158,7 @@ const logoutSchema = {
 		description:
 			"Performs a logout for the user and returns the status. If an error occurs, a 500 status is returned.",
 	},
-	cooke: CookieSchema,
+	cookie: CookieSchema,
 	beforeHandle: verifyJWTMiddleware,
 };
 
