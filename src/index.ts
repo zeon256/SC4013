@@ -24,7 +24,8 @@ async function tryConnectDb(pool: Pool, cfg: Readonly<AppConfig>) {
 }
 
 (async () => {
-	const cfg = await readJsonConfig();
+	const cfgPath = process.argv[1] ?? "./config.json";
+	const cfg = await readJsonConfig(cfgPath);
 	const pool = new Pool(cfg.dbConfig);
 	await tryConnectDb(pool, cfg);
 
