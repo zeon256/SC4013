@@ -91,7 +91,12 @@ const passwordFormat = t.String({
 const loginBody = t.Object({ email: emailFormat, password: passwordFormat });
 
 const cookieSchema = t.Cookie({
-	jwt_token: t.String({ minLength: 10 }),
+	jwt_token: t.String({
+		minLength: 10,
+		error({ errors }) {
+			throw new BadRequestError("Invalid JWT Token");
+		},
+	}),
 });
 
 export const loginSchema = {
