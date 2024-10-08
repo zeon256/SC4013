@@ -66,7 +66,9 @@ jobs:
         with:
           context: .
           push: true
-          tags: registry.digitalocean.com/sc4013/sc4013-backend:${{ needs.release.outputs.new_release_version }} 
+          tags: |
+            registry.digitalocean.com/sc4013/sc4013-backend:${{ needs.release.outputs.new_release_version }} 
+            registry.digitalocean.com/sc4013/sc4013-backend:latest
   check-docker-build:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
