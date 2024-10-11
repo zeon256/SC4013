@@ -46,9 +46,8 @@
 - [ ] Endpoints
     - [x] `GET /api/v1/products`
     - [x] `GET /api/v1/products/:id`
-    - [ ] `PUT /api/v1/products`
-    - [ ] `POST /api/v1/products`
-    - [ ] `POST /api/v1/products`
+    - [x] `PUT [Protected] /api/v1/products`
+    - [x] `DELETE [Protected] /api/v1/products`
     - [x] `POST /api/v1/auth/login`
     - [x] `POST /api/v1/auth/register`
     - [x] `POST /api/v1/auth/logout`
