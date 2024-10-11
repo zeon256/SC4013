@@ -1,15 +1,23 @@
-import Elysia, { t, ValidationError } from "elysia";
+import Elysia, { Cookie, t, ValidationError } from "elysia";
 import type { Pool } from "pg";
-import type { ProductModel } from "../../models";
+import type { Product, ProductModel } from "../../models";
 import {
 	getProducts as dbGetProducts,
 	getProductById as dbGetProductById,
+	createProduct as dbCreateProduct,
+	updateProduct as dbUpdateProduct,
+	deleteProduct as dbDeleteProduct
 } from "../../database/product";
+import { getUserByEmail as dbGetUserByEmail } from "../../database/user";
+import { Jwt, verifyJWTMiddleware } from "./auth";
+import { JWTPayloadSpec } from "@elysiajs/jwt";
+import { InvalidAccountCredentialsError, NotEnoughPermission } from "./errors";
+import jwt from "@elysiajs/jwt"; 
 
 const productSchema = t.Object({
 	id: t.Number(),
-	name: t.String(),
-	description: t.String(),
+	name: t.String({ minLength: 1, maxLength: 100 }),
+	description: t.String({ minLength: 1, maxLength: 1000 }),
 	created_by: t.Number(),
 	updated_by: t.Number(),
 	created_at: t.Date(),
@@ -49,13 +57,14 @@ const postProductSchema = {
 		description: t.String(),
 	}),
 	response: {
-		200: productSchema,
+		200: t.Nullable(productSchema),
 		500: t.String(),
 	},
 	detail: {
 		summary: "Create Product",
 		description: "Return a created product",
 	},
+	beforeHandle: verifyJWTMiddleware,
 };
 
 const updateProductSchema = {
@@ -63,11 +72,12 @@ const updateProductSchema = {
 		id: t.Number({ minimum: 1, maximum: Number.MAX_SAFE_INTEGER }),
 	}),
 	body: t.Object({
-		name: t.String(),
-		description: t.String(),
+		name: t.String({ minLength: 1, maxLength: 100 }),
+		description: t.String( { minLength: 1, maxLength: 1000 }),
 	}),
 	response: {
 		200: productSchema,
+		401: t.String(),
 		404: t.String(),
 		500: t.String(),
 	},
@@ -75,6 +85,7 @@ const updateProductSchema = {
 		summary: "Update Product By Id",
 		description: "Return the updated product",
 	},
+	beforeHandle: verifyJWTMiddleware
 };
 
 const deleteProductSchema = {
@@ -82,14 +93,16 @@ const deleteProductSchema = {
 		id: t.Number({ minimum: 1, maximum: Number.MAX_SAFE_INTEGER }),
 	}),
 	response: {
-		200: t.Null(),
+		200: productSchema,
 		404: t.String(),
+		403: t.String(),
 		500: t.String(),
 	},
 	detail: {
 		summary: "Delete Product By Id",
 		description: "Return the deleted product",
 	},
+	beforeHandle: verifyJWTMiddleware
 };
 
 export function productRoute(pool: Pool) {
@@ -98,6 +111,15 @@ export function productRoute(pool: Pool) {
 		prefix: "/products",
 	})
 		.decorate("pool", pool)
+		.use(
+			jwt({
+				name: "jwt",
+				// biome-ignore lint/style/noNonNullAssertion: we want this to fail if it doesnt exist
+				secret: process.env.JWT_SECRET!,
+				exp: "2d",
+				schema: t.Object({ email: t.String({ format: "email" }) }),
+			}),
+		)
 		.get("/", async ({ pool }) => await getProducts(pool), productsSchema)
 		.get(
 			"/:id",
@@ -107,19 +129,20 @@ export function productRoute(pool: Pool) {
 		)
 		.post(
 			"/",
-			async ({ pool, body }) => await postProduct(pool, body),
+			async ({ jwt, pool, body, cookie: { jwt_token }, error }) => 
+				(await postProduct(pool, jwt, jwt_token, body)) ?? error(500, "Internal Server Error"),
 			postProductSchema,
 		)
 		.put(
 			"/:id",
-			async ({ pool, body, params: { id }, error }) =>
-				(await updateProductById(pool, id, body)) ?? error(404, "Not Found"),
+			async ({ jwt, pool, body, params: { id }, cookie: { jwt_token }, error }) =>
+				(await updateProductById(pool, jwt, jwt_token, id, body)) ?? error(404, "Not Found"),
 			updateProductSchema,
 		)
 		.delete(
 			"/:id",
-			async ({ pool, params: { id }, error }) =>
-				(await deleteProductById(pool, id)) ?? error(404, "Not Found"),
+			async ({ jwt, pool, params: { id }, cookie: { jwt_token }, error }) =>
+				(await deleteProductById(pool, jwt, jwt_token, id)) ?? error(404, "Not Found"),
 			deleteProductSchema,
 		);
 }
@@ -137,40 +160,101 @@ async function getProductsById(
 
 async function postProduct(
 	pool: Pool,
-	product: Pick<ProductModel, "name" | "description">,
-): Promise<ProductModel> {
-	// TODO: impl db, requires auth to be done i think
-	return {
-		id: 9000,
-		name: product.name,
-		description: product.description,
-		created_by: 1,
-		updated_by: 1,
-		created_at: new Date(),
-		updated_at: new Date(),
-		deleted_at: null,
-	};
+	jwt: Jwt,
+	jwtToken: Cookie<string | undefined>,
+	product: Product,
+): Promise<ProductModel | null> {
+	// idk how to pass the profile from beforeHandle
+	const raw = await jwt.verify(jwtToken.value);
+
+	// cfm wont be false since we already check in beforeHandle
+	// so this is safe to do
+	const email = (raw as {email: string}).email;
+	const user = await dbGetUserByEmail(pool, email);
+
+	if (!user) {
+		// should not happen, if this happens means something is buggy!
+		throw new InvalidAccountCredentialsError("User does not exist!")
+	}
+	
+	return dbCreateProduct(pool, user?.id, product);
 }
 
 async function updateProductById(
 	pool: Pool,
+	jwt: Jwt,
+	jwtToken: Cookie<string | undefined>,
 	id: number,
-	{ name, description }: Pick<ProductModel, "name" | "description">,
+	{ name, description }: Product,
 ): Promise<ProductModel | null> {
-	// TODO: impl db, requires auth to be done i think
-	return {
-		id: id,
-		name: name,
-		description: description,
-		created_by: 1,
-		updated_by: 1,
-		created_at: new Date(),
-		updated_at: new Date(),
-		deleted_at: null,
-	};
+	// idk how to pass the profile from beforeHandle
+	const raw = await jwt.verify(jwtToken.value);
+
+	// cfm wont be false since we already check in beforeHandle
+	// so this is safe to do
+	const email = (raw as { email: string }).email;
+	const user = await dbGetUserByEmail(pool, email);
+
+	if (!user) {
+		// should not happen, if this happens means something is buggy!
+		throw new InvalidAccountCredentialsError("User does not exist!")
+	}
+
+	// check if object has the same created_by
+	// admin can delete anyone product
+	const product = await dbGetProductById(pool, id);
+
+	if(!product) return null;
+
+	// can update if they own the resource	
+	if(product.created_by == user.id) {
+		return dbUpdateProduct(pool, user?.id, { name,description, id });
+	}
+	
+	// can only update if they admin
+	if(!user.is_admin) {
+		throw new NotEnoughPermission("User is not admin trying to modify resource they don't own!"); 	
+	}
+	
+	return dbUpdateProduct(pool, user?.id, { name,description, id });
 }
 
-async function deleteProductById(pool: Pool, id: number): Promise<null> {
-	// TODO: impl db, requires auth to be done i think
-	return null;
+async function deleteProductById(pool: Pool, 
+	jwt: Jwt,
+	jwtToken: Cookie<string | undefined>,
+	id: number
+): Promise<ProductModel | null> {
+	// idk how to pass the profile from beforeHandle
+	const raw = await jwt.verify(jwtToken.value);
+
+	// cfm wont be false since we already check in beforeHandle
+	// so this is safe to do
+	const email = (raw as { email: string }).email;
+	const user = await dbGetUserByEmail(pool, email);
+
+	if (!user) {
+		// should not happen, if this happens means something is buggy!
+		throw new InvalidAccountCredentialsError("User does not exist!")
+	}
+
+	// check if object has the same created_by
+	// admin can delete anyone product
+	const product = await dbGetProductById(pool, id);
+
+	// dont have to check if resource already deleted or not cos getProductById
+	// alr take that into account
+
+	if (!product) return null;
+
+	// can delete if they own the resource
+	if (product.created_by == user.id) {
+		return dbDeleteProduct(pool, user?.id, id);
+	}
+	
+	// can only delete if they admin
+	if (!user.is_admin) {
+		throw new NotEnoughPermission("User is not admin trying to modify resource they don't own!"); 	
+	}
+
+	return dbDeleteProduct(pool, user?.id, id);
 }

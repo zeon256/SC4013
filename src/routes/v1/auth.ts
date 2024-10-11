@@ -19,7 +19,7 @@ import {
 	InvalidAccountCredentialsError,
 } from "./errors";
 
-type Jwt = {
+export type Jwt = {
 	readonly sign: (
 		morePaylad: { email: string } & JWTPayloadSpec,
 	) => Promise<string>;
