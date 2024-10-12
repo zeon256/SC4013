@@ -1,51 +1,15 @@
 import { randomBytes } from "crypto";
-import Elysia, {
-	type Cookie,
-	InternalServerError,
-	NotFoundError,
-	type Static,
-	type StatusMap,
-	t,
-} from "elysia";
+import Elysia, { type Cookie, InternalServerError, NotFoundError, type Static, t } from "elysia";
 import type { Pool } from "pg";
 import argon2 from "argon2";
 import { getUserByEmail, insertUser } from "../../database/user";
 import jwt, { type JWTPayloadSpec } from "@elysiajs/jwt";
-import type { HTTPHeaders } from "elysia/dist/types";
-import type { ElysiaCookie } from "elysia/dist/cookies";
-import {
-	AccountAlreadyExistError,
-	BadRequestError,
-	InvalidAccountCredentialsError,
-} from "./errors";
+import { AccountAlreadyExistError, BadRequestError, InvalidAccountCredentialsError } from "./errors";
 
 export type Jwt = {
 	readonly sign: (morePaylad: { email: string } & JWTPayloadSpec) => Promise<string>;
 	readonly verify: (jwt?: string) => Promise<false | ({ email: string } & JWTPayloadSpec)>;
 };
-
-type ElysiaSet = {
-	headers: HTTPHeaders;
-	status?: number | keyof StatusMap;
-	redirect?: string;
-	cookie?: Cookie<string | ElysiaCookie>;
-};
-
-export async function verifyJWTMiddleware({
-	cookie: { jwt_token },
-	set,
-	jwt,
-}: {
-	cookie: { jwt_token: Cookie<string | undefined> };
-	set: ElysiaSet;
-	jwt: Jwt;
-}) {
-	const profile = await jwt.verify(jwt_token.value);
-	if (!profile) {
-		set.status = 401;
-		return "Unauthorized";
-	}
-}
 
 /*
 At least 1 special character
@@ -88,7 +52,7 @@ const loginBody = t.Object({ email: emailFormat, password: passwordFormat });
 const cookieSchema = t.Cookie({
 	jwt_token: t.String({
 		minLength: 10,
-		error({ errors }) {
+		error() {
 			throw new BadRequestError("Invalid JWT Token");
 		},
 	}),
@@ -139,11 +103,9 @@ const logoutSchema = {
 	},
 	detail: {
 		summary: "Logout the user",
-		description:
-			"Performs a logout for the user and returns the status. If an error occurs, a 500 status is returned.",
+		description: "Performs a logout for the user and returns the status. If an error occurs, a 500 status is returned.",
 	},
 	cookie: cookieSchema,
-	beforeHandle: verifyJWTMiddleware,
 };
 
 async function loginHandler(
@@ -181,10 +143,7 @@ async function loginHandler(
 	return { message: "Success" };
 }
 
-async function registerHandler(
-	pool: Pool,
-	body: Static<typeof registerBody>,
-): Promise<LoginResponse> {
+async function registerHandler(pool: Pool, body: Static<typeof registerBody>): Promise<LoginResponse> {
 	if (body.email !== body.confirm_email) {
 		throw new BadRequestError("Email does not match confirm email!");
 	}
@@ -233,14 +192,15 @@ export function authRoute(pool: Pool) {
 		.decorate("pool", pool)
 		.post(
 			"/login",
-			async ({ jwt, pool, body, cookie: { jwt_token } }) =>
-				await loginHandler(pool, body, jwt_token, jwt),
+			async ({ jwt, pool, body, cookie: { jwt_token } }) => await loginHandler(pool, body, jwt_token, jwt),
 			loginSchema,
 		)
 		.post("/register", async ({ pool, body }) => await registerHandler(pool, body), registerSchema)
-		.post(
-			"/logout",
-			async ({ cookie: { jwt_token } }) => await logoutHandler(jwt_token),
-			logoutSchema,
-		);
+		.derive(async ({ jwt, cookie: { jwt_token } }) => {
+			const profile = await jwt.verify(jwt_token.value);
+			if (!profile) {
+				throw new InvalidAccountCredentialsError("Unauthorized account!");
+			}
+		})
+		.post("/logout", async ({ cookie: { jwt_token } }) => await logoutHandler(jwt_token), logoutSchema);
 }
