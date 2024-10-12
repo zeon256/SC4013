@@ -43,14 +43,14 @@
     - [ ] CD to Staging Environment
     - [ ] SAST
     - [ ] Container Scanning
-- [ ] Endpoints
+- [x] Endpoints
     - [x] `GET /api/v1/products`
     - [x] `GET /api/v1/products/:id`
     - [x] `PUT [Protected] /api/v1/products`
     - [x] `DELETE [Protected] /api/v1/products`
     - [x] `POST /api/v1/auth/login`
     - [x] `POST /api/v1/auth/register`
-    - [x] `POST /api/v1/auth/logout`
+    - [x] `POST [Protected] /api/v1/auth/logout`
 
 # Architecture
 TODO
