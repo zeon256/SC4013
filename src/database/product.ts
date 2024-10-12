@@ -2,17 +2,12 @@ import type { Pool } from "pg";
 import type { Product, ProductModel } from "../models";
 
 export async function getProducts(pool: Pool): Promise<ProductModel[]> {
-	const result = await pool.query<ProductModel>(
-		"SELECT * FROM Product WHERE deleted_at IS NULL;",
-	);
+	const result = await pool.query<ProductModel>("SELECT * FROM Product WHERE deleted_at IS NULL;");
 
 	return result.rows;
 }
 
-export async function getProductById(
-	pool: Pool,
-	id: number,
-): Promise<ProductModel | null> {
+export async function getProductById(pool: Pool, id: number): Promise<ProductModel | null> {
 	const result = await pool.query<ProductModel>({
 		text: "SELECT * FROM Product WHERE id = $1 AND deleted_at IS NULL;",
 		values: [id],
@@ -25,11 +20,10 @@ export async function getProductById(
 export async function createProduct(
 	pool: Pool,
 	userId: number,
-	{ name, description }: Product
+	{ name, description }: Product,
 ): Promise<ProductModel | null> {
-
 	const result = await pool.query<{ id: number }>(
-		'INSERT INTO Product (name, description, created_by, updated_by) VALUES ($1, $2, $3, $4) RETURNING id',
+		"INSERT INTO Product (name, description, created_by, updated_by) VALUES ($1, $2, $3, $4) RETURNING id",
 		[name, description, userId, userId],
 	);
 
@@ -50,11 +44,10 @@ export async function createProduct(
 export async function updateProduct(
 	pool: Pool,
 	userId: number,
-	{ id, name, description }: Product & { id: number }
+	{ id, name, description }: Product & { id: number },
 ): Promise<ProductModel | null> {
-
 	const result = await pool.query<ProductModel>(
-		'UPDATE Product SET name = $1, description = $2, updated_by = $3, updated_at = NOW() WHERE id = $4 RETURNING *;',
+		"UPDATE Product SET name = $1, description = $2, updated_by = $3, updated_at = NOW() WHERE id = $4 RETURNING *;",
 		[name, description, userId, id],
 	);
 
@@ -68,9 +61,8 @@ export async function deleteProduct(
 	userId: number,
 	id: number,
 ): Promise<ProductModel | null> {
-
 	const result = await pool.query<ProductModel>(
-		'UPDATE Product SET updated_by = $1, updated_at = NOW(), deleted_at = NOW() WHERE id = $2 RETURNING *;',
+		"UPDATE Product SET updated_by = $1, updated_at = NOW(), deleted_at = NOW() WHERE id = $2 RETURNING *;",
 		[userId, id],
 	);
 

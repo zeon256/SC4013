@@ -15,8 +15,9 @@
     "pg": "^8.12.0"
   },
   "devDependencies": {
-    "bun-types": "latest",
-    "@types/pg": "latest"
+    "@biomejs/biome": "1.9.3",
+    "@types/pg": "latest",
+    "bun-types": "latest"
   },
   "module": "src/index.js"
 }

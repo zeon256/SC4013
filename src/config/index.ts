@@ -10,9 +10,7 @@ export type AppConfig = {
 	dbConfig: Readonly<PoolConfig>;
 };
 
-export async function readJsonConfig(
-	filePath = "./config.json",
-): Promise<Readonly<AppConfig>> {
+export async function readJsonConfig(filePath = "./config.json"): Promise<Readonly<AppConfig>> {
 	const file = Bun.file(filePath);
 	const text = await file.text();
 	const config: AppConfig = JSON.parse(text);

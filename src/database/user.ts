@@ -1,14 +1,8 @@
 import type { Pool } from "pg";
 import type { UserModel } from "../models";
 
-export async function getUserByEmail(
-	pool: Pool,
-	email: string,
-): Promise<UserModel | null> {
-	const res = await pool.query<UserModel>(
-		'SELECT * from "User" WHERE Email = $1',
-		[email],
-	);
+export async function getUserByEmail(pool: Pool, email: string): Promise<UserModel | null> {
+	const res = await pool.query<UserModel>('SELECT * from "User" WHERE Email = $1', [email]);
 	if (res.rows.length <= 0) return null;
 	return res.rows[0];
 }
