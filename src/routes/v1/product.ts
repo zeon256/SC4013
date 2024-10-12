@@ -64,7 +64,7 @@ const productIdSchema = {
 const postProductSchema = {
 	body: t.Pick(productSchema, ["name", "description"]),
 	response: {
-		200: t.Nullable(productSchema),
+		200: productSchema,
 		500: t.String(),
 	},
 	detail: {
