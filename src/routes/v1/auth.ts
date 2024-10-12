@@ -19,13 +19,9 @@ import {
 	InvalidAccountCredentialsError,
 } from "./errors";
 
-type Jwt = {
-	readonly sign: (
-		morePaylad: { email: string } & JWTPayloadSpec,
-	) => Promise<string>;
-	readonly verify: (
-		jwt?: string,
-	) => Promise<false | ({ email: string } & JWTPayloadSpec)>;
+export type Jwt = {
+	readonly sign: (morePaylad: { email: string } & JWTPayloadSpec) => Promise<string>;
+	readonly verify: (jwt?: string) => Promise<false | ({ email: string } & JWTPayloadSpec)>;
 };
 
 type ElysiaSet = {
@@ -59,8 +55,7 @@ At least 1 numeric character
 
 TODO: Create unit test for regex
 */
-const passwordRegex =
-	/^(?=.*[!@#$%^&*(),.?":{}|<>])(?=.*[A-Z])(?=.*[a-z])(?=.*\d).+$/gm;
+const passwordRegex = /^(?=.*[!@#$%^&*(),.?":{}|<>])(?=.*[A-Z])(?=.*[a-z])(?=.*\d).+$/gm;
 
 type LoginResponse = { message: string };
 
@@ -167,10 +162,7 @@ async function loginHandler(
 	let match = true;
 
 	try {
-		match = await argon2.verify(
-			existingAcc.password,
-			body.password + existingAcc.salt,
-		);
+		match = await argon2.verify(existingAcc.password, body.password + existingAcc.salt);
 	} catch (err) {
 		throw new InternalServerError(JSON.stringify(err));
 	}
@@ -214,9 +206,7 @@ async function registerHandler(
 	return { message: `Success, Account Id ${user_id}` };
 }
 
-async function logoutHandler(
-	jwtToken: Cookie<string | undefined>,
-): Promise<LoginResponse> {
+async function logoutHandler(jwtToken: Cookie<string | undefined>): Promise<LoginResponse> {
 	jwtToken.set({
 		value: "",
 		httpOnly: true,
@@ -247,11 +237,7 @@ export function authRoute(pool: Pool) {
 				await loginHandler(pool, body, jwt_token, jwt),
 			loginSchema,
 		)
-		.post(
-			"/register",
-			async ({ pool, body }) => await registerHandler(pool, body),
-			registerSchema,
-		)
+		.post("/register", async ({ pool, body }) => await registerHandler(pool, body), registerSchema)
 		.post(
 			"/logout",
 			async ({ cookie: { jwt_token } }) => await logoutHandler(jwt_token),

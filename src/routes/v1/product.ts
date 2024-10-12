@@ -1,15 +1,33 @@
-import Elysia, { t, ValidationError } from "elysia";
+import jwt from "@elysiajs/jwt";
+import Elysia, { InternalServerError, NotFoundError, t } from "elysia";
 import type { Pool } from "pg";
-import type { ProductModel } from "../../models";
 import {
-	getProducts as dbGetProducts,
+	createProduct as dbCreateProduct,
+	deleteProduct as dbDeleteProduct,
 	getProductById as dbGetProductById,
+	getProducts as dbGetProducts,
+	updateProduct as dbUpdateProduct,
 } from "../../database/product";
+import { getUserByEmail as dbGetUserByEmail } from "../../database/user";
+import type { Product, ProductModel, UserModel } from "../../models";
+import { BadRequestError, InvalidAccountCredentialsError, NotEnoughPermission } from "./errors";
 
 const productSchema = t.Object({
 	id: t.Number(),
-	name: t.String(),
-	description: t.String(),
+	name: t.String({
+		minLength: 1,
+		maxLength: 100,
+		error({ errors }) {
+			throw new BadRequestError(errors[0].message);
+		},
+	}),
+	description: t.String({
+		minLength: 1,
+		maxLength: 1000,
+		error({ errors }) {
+			throw new BadRequestError(errors[0].message);
+		},
+	}),
 	created_by: t.Number(),
 	updated_by: t.Number(),
 	created_at: t.Date(),
@@ -44,10 +62,7 @@ const productIdSchema = {
 };
 
 const postProductSchema = {
-	body: t.Object({
-		name: t.String(),
-		description: t.String(),
-	}),
+	body: t.Pick(productSchema, ["name", "description"]),
 	response: {
 		200: productSchema,
 		500: t.String(),
@@ -62,12 +77,10 @@ const updateProductSchema = {
 	params: t.Object({
 		id: t.Number({ minimum: 1, maximum: Number.MAX_SAFE_INTEGER }),
 	}),
-	body: t.Object({
-		name: t.String(),
-		description: t.String(),
-	}),
+	body: t.Pick(productSchema, ["name", "description"]),
 	response: {
 		200: productSchema,
+		401: t.String(),
 		404: t.String(),
 		500: t.String(),
 	},
@@ -82,8 +95,9 @@ const deleteProductSchema = {
 		id: t.Number({ minimum: 1, maximum: Number.MAX_SAFE_INTEGER }),
 	}),
 	response: {
-		200: t.Null(),
+		200: productSchema,
 		404: t.String(),
+		403: t.String(),
 		500: t.String(),
 	},
 	detail: {
@@ -98,28 +112,45 @@ export function productRoute(pool: Pool) {
 		prefix: "/products",
 	})
 		.decorate("pool", pool)
+		.use(
+			jwt({
+				name: "jwt",
+				// biome-ignore lint/style/noNonNullAssertion: we want this to fail if it doesnt exist
+				secret: process.env.JWT_SECRET!,
+				exp: "2d",
+				schema: t.Object({ email: t.String({ format: "email" }) }),
+			}),
+		)
 		.get("/", async ({ pool }) => await getProducts(pool), productsSchema)
 		.get(
 			"/:id",
-			async ({ pool, params: { id }, error }) =>
-				(await getProductsById(pool, id)) ?? error(404, "Not Found"),
+			async ({ pool, params: { id }, error }) => (await getProductsById(pool, id)) ?? error(404, "Not Found"),
 			productIdSchema,
 		)
-		.post(
-			"/",
-			async ({ pool, body }) => await postProduct(pool, body),
-			postProductSchema,
-		)
+		.derive(async ({ pool, cookie: { jwt_token }, jwt }) => {
+			const profile = await jwt.verify(jwt_token.value);
+			if (!profile) {
+				throw new InvalidAccountCredentialsError("Unauthorized account!");
+			}
+
+			const email = (profile as { email: string }).email;
+			const user = await dbGetUserByEmail(pool, email);
+
+			if (!user) {
+				throw new InvalidAccountCredentialsError("User does not exist!");
+			}
+
+			return { user };
+		})
+		.post("/", async ({ pool, body, user }) => await postProduct(pool, user, body), postProductSchema)
 		.put(
 			"/:id",
-			async ({ pool, body, params: { id }, error }) =>
-				(await updateProductById(pool, id, body)) ?? error(404, "Not Found"),
+			async ({ pool, body, params: { id }, user }) => await updateProductById(pool, user, id, body),
 			updateProductSchema,
 		)
 		.delete(
 			"/:id",
-			async ({ pool, params: { id }, error }) =>
-				(await deleteProductById(pool, id)) ?? error(404, "Not Found"),
+			async ({ pool, params: { id }, user }) => await deleteProductById(pool, user, id),
 			deleteProductSchema,
 		);
 }
@@ -128,49 +159,88 @@ async function getProducts(pool: Pool): Promise<ProductModel[]> {
 	return dbGetProducts(pool);
 }
 
-async function getProductsById(
-	pool: Pool,
-	id: number,
-): Promise<ProductModel | null> {
+async function getProductsById(pool: Pool, id: number): Promise<ProductModel | null> {
 	return dbGetProductById(pool, id);
 }
 
-async function postProduct(
-	pool: Pool,
-	product: Pick<ProductModel, "name" | "description">,
-): Promise<ProductModel> {
-	// TODO: impl db, requires auth to be done i think
-	return {
-		id: 9000,
-		name: product.name,
-		description: product.description,
-		created_by: 1,
-		updated_by: 1,
-		created_at: new Date(),
-		updated_at: new Date(),
-		deleted_at: null,
-	};
+async function postProduct(pool: Pool, user: UserModel, product: Product): Promise<ProductModel> {
+	const result = await dbCreateProduct(pool, user?.id, product);
+
+	if (!result) throw new InternalServerError("Something broke!");
+	return result;
 }
 
 async function updateProductById(
 	pool: Pool,
+	user: UserModel,
 	id: number,
-	{ name, description }: Pick<ProductModel, "name" | "description">,
-): Promise<ProductModel | null> {
-	// TODO: impl db, requires auth to be done i think
-	return {
-		id: id,
-		name: name,
-		description: description,
-		created_by: 1,
-		updated_by: 1,
-		created_at: new Date(),
-		updated_at: new Date(),
-		deleted_at: null,
-	};
+	{ name, description }: Product,
+): Promise<ProductModel> {
+	// check if object has the same created_by
+	// admin can delete anyone product
+	const product = await dbGetProductById(pool, id);
+
+	if (!product) throw new NotFoundError("Product Id not found!");
+
+	// can update if they own the resource
+	if (product.created_by === user.id) {
+		const result = await dbUpdateProduct(pool, user?.id, {
+			name,
+			description,
+			id,
+		});
+
+		if (!result) throw new NotFoundError("Product Id not found!");
+
+		return result;
+	}
+
+	// can only update if they admin
+	if (!user.is_admin) {
+		throw new NotEnoughPermission("User is not admin trying to modify resource they don't own!");
+	}
+
+	const result = await dbUpdateProduct(pool, user?.id, {
+		name,
+		description,
+		id,
+	});
+
+	if (!result) {
+		throw new NotFoundError("Product Id not found!");
+	}
+
+	return result;
 }
 
-async function deleteProductById(pool: Pool, id: number): Promise<null> {
-	// TODO: impl db, requires auth to be done i think
-	return null;
+async function deleteProductById(pool: Pool, user: UserModel, id: number): Promise<ProductModel> {
+	// check if object has the same created_by
+	// admin can delete anyone product
+	const product = await dbGetProductById(pool, id);
+
+	// dont have to check if resource already deleted or not cos getProductById
+	// alr take that into account
+	if (!product) {
+		throw new NotFoundError("Product Id not found!");
+	}
+
+	// can delete if they own the resource
+	if (product.created_by === user.id) {
+		const result = await dbDeleteProduct(pool, user?.id, id);
+		if (!result) {
+			throw new NotFoundError("Product Id not found!");
+		}
+		return result;
+	}
+
+	// can only delete if they admin
+	if (!user.is_admin) {
+		throw new NotEnoughPermission("User is not admin trying to modify resource they don't own!");
+	}
+
+	const result = await dbDeleteProduct(pool, user?.id, id);
+	if (!result) {
+		throw new NotFoundError("Product Id not found!");
+	}
+	return result;
 }

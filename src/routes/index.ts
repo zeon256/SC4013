@@ -18,9 +18,7 @@ const dbHealthHandlerSchema = {
 type DbHealthMessage = { message: string };
 
 async function dbHealthHandler(pool: Pool): Promise<DbHealthMessage> {
-	const result = await pool.query<DbHealthMessage>(
-		"SELECT 'Hello, World!' AS message;",
-	);
+	const result = await pool.query<DbHealthMessage>("SELECT 'Hello, World!' AS message;");
 
 	return result.rows[0];
 }
@@ -28,8 +26,4 @@ async function dbHealthHandler(pool: Pool): Promise<DbHealthMessage> {
 export const statusRoute = (pool: Pool) =>
 	new Elysia()
 		.decorate("pool", pool)
-		.get(
-			"/db-healthz",
-			async ({ pool }) => await dbHealthHandler(pool),
-			dbHealthHandlerSchema,
-		);
+		.get("/db-healthz", async ({ pool }) => await dbHealthHandler(pool), dbHealthHandlerSchema);

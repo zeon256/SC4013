@@ -1,6 +1,15 @@
 export class InvalidAccountCredentialsError extends Error {
-	code = "FORBIDDEN";
+	code = "UNAUTHORIZED";
 	status = 401;
+
+	constructor(message?: string) {
+		super(message ?? "UNAUTHORIZED");
+	}
+}
+
+export class NotEnoughPermission extends Error {
+	code = "FORBIDDEN";
+	status = 403;
 
 	constructor(message?: string) {
 		super(message ?? "FORBIDDEN");

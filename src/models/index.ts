@@ -16,10 +16,7 @@ export type Product = {
 	description: string;
 };
 
-export type ProductModel = DatabaseId &
-	Product &
-	DatabaseUserAction &
-	DatabaseTimestamp;
+export type ProductModel = DatabaseId & Product & DatabaseUserAction & DatabaseTimestamp;
 
 export type User = {
 	email: string;
@@ -32,6 +29,4 @@ export type User = {
 	is_admin: boolean;
 };
 
-export type UserModel = DatabaseId &
-	User &
-	DatabaseUserAction;
+export type UserModel = DatabaseId & User & DatabaseUserAction;
