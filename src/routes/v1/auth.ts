@@ -2,7 +2,7 @@ import { randomBytes } from "crypto";
 import Elysia, { type Cookie, InternalServerError, NotFoundError, type Static, t } from "elysia";
 import type { Pool } from "pg";
 import argon2 from "argon2";
-import { getUserByEmail, insertUser } from "../../database/user";
+import { getUserByEmail, insertUser, LockAccount, updateFailAttempt } from "../../database/user";
 import jwt, { type JWTPayloadSpec } from "@elysiajs/jwt";
 import { AccountAlreadyExistError, BadRequestError, InvalidAccountCredentialsError } from "./errors";
 import { rateLimit } from "elysia-rate-limit";
@@ -133,6 +133,12 @@ async function loginHandler(
 	const existingAcc = await getUserByEmail(pool, body.email);
 	if (existingAcc === null) {
 		throw new NotFoundError("Account does not exist!");
+	}else if (existingAcc.lockout){
+		//throw error
+		throw new BadRequestError("Account has been locked due to too many failed login attempts");
+	}else if (existingAcc.failed_login_attempt_count >= 5){
+		await LockAccount(pool, body.email);
+		throw new BadRequestError("Account has been locked due to too many failed login attempts");
 	}
 
 	let match = true;
@@ -144,6 +150,7 @@ async function loginHandler(
 	}
 
 	if (!match) {
+		await updateFailAttempt(pool, body.email);
 		throw new InvalidAccountCredentialsError("Invalid email or password!");
 	}
 
