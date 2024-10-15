@@ -6,6 +6,7 @@ import { type AppConfig, readJsonConfig } from "./config";
 import { productRoute } from "./routes/v1/product";
 import { authRoute } from "./routes/v1/auth";
 import { statusRoute } from "./routes";
+import { ip } from "./plugin/elysia_ip";
 
 async function tryConnectDb(pool: Pool, cfg: Readonly<AppConfig>) {
 	try {
@@ -23,6 +24,8 @@ async function tryConnectDb(pool: Pool, cfg: Readonly<AppConfig>) {
 	}
 }
 
+export const app = new Elysia().state("ip", "");
+
 (async () => {
 	const cfgPath = process.argv[2] ?? "./config.json";
 	console.log(`[+] Got configFilePath: ${cfgPath}`);
@@ -31,8 +34,7 @@ async function tryConnectDb(pool: Pool, cfg: Readonly<AppConfig>) {
 	const pool = new Pool(cfg.dbConfig);
 	await tryConnectDb(pool, cfg);
 
-	const app = new Elysia()
-		.decorate("pool", pool)
+	app.decorate("pool", pool)
 		.use(swagger())
 		.use(Logestic.preset("common"))
 		.onError(({ code, error }) => {
@@ -48,6 +50,7 @@ async function tryConnectDb(pool: Pool, cfg: Readonly<AppConfig>) {
 			}
 		})
 		.use(statusRoute(pool))
+		.use(ip())
 		.group("/api/v1", (apiGrp) => apiGrp.use(productRoute(pool)).use(authRoute(pool)))
 		.listen(cfg.serverConfig.port);
 
@@ -57,3 +60,5 @@ async function tryConnectDb(pool: Pool, cfg: Readonly<AppConfig>) {
 		`[+] View documentation at "http://${app.server?.hostname}:${app.server?.port}/swagger" in your browser`,
 	);
 })();
+
+export type ElysiaApp = typeof app;

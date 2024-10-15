@@ -25,6 +25,15 @@ export class AccountAlreadyExistError extends Error {
 	}
 }
 
+export class AccountLockOutError extends Error {
+	code = "FORBIDDEN";
+	status = 403;
+
+	constructor(message?: string) {
+		super(message ?? "FORBIDDEN");
+	}
+}
+
 export class BadRequestError extends Error {
 	code = "BAD_REQUEST";
 	status = 400;

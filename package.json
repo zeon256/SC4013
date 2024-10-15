@@ -8,11 +8,13 @@
   },
   "dependencies": {
     "@elysiajs/jwt": "^1.1.1",
-    "@elysiajs/swagger": "^1.1.1",
+    "@elysiajs/swagger": "^1.1.5",
     "argon2": "^0.41.1",
     "elysia": "latest",
-    "logestic": "^1.2.3",
-    "pg": "^8.12.0"
+    "elysia-ip": "^1.0.7",
+    "elysia-rate-limit": "^4.1.0",
+    "logestic": "^1.2.4",
+    "pg": "^8.13.0"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.3",
