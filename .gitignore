@@ -43,3 +43,13 @@ package-lock.json
 **/*.bun
 
 config.json
+
+# terraform stuff
+iac/terraform.tfvars
+iac/.terraform
+iac/.terraform.lock.hcl
+iac/terraform.tfstate
+iac/terraform.tfstate.backup
+iac/digitalocean_deploy
+iac/digitalocean_deploy.pub
+

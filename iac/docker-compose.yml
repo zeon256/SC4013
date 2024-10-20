@@ -5,6 +5,7 @@ services:
     image: registry.digitalocean.com/sc4013/sc4013-backend:latest
     container_name: sc4013-backend
     command: ./config/config.json
+    restart: always
     env_file:
       - ../.env
     ports:
