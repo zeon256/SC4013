@@ -1,0 +1,37 @@
+version: '3'
+
+services:
+  sc4013-backend:
+    image: registry.digitalocean.com/sc4013/sc4013-backend:latest
+    container_name: sc4013-backend
+    command: ./config/config.json
+    restart: always
+    env_file:
+      - ../.env
+    ports:
+      - "80:3000"
+    volumes:
+      - ../config.json:/usr/src/app/config/config.json
+    depends_on:
+      - postgres
+  postgres:
+    image: postgres:latest
+    container_name: sc4013_postgres_db_container
+    env_file:
+      - ../.env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../db_schema:/docker-entrypoint-initdb.d
+  watchtower:
+    image: containrrr/watchtower:latest
+    depends_on:
+      - sc4013-backend
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /root/.docker/config.json:/config.json
+    command: --interval 30
+
+volumes:
+  postgres_data:
