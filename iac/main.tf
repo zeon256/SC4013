@@ -91,6 +91,7 @@ resource "digitalocean_droplet" "sc4013-stg" {
     ]
   }
 }
+
 # Create a firewall
 resource "digitalocean_firewall" "sc4013-firewall" {
   name = "sc4013-firewall"
@@ -100,22 +101,26 @@ resource "digitalocean_firewall" "sc4013-firewall" {
     port_range       = "22"
     source_addresses = ["0.0.0.0/0"]
   }
+
   inbound_rule {
     protocol         = "tcp"
     port_range       = "80"
     source_addresses = ["0.0.0.0/0"]
   }
-  inbound_rule {
-    protocol         = "tcp"
-    port_range       = "3000"
-    source_addresses = ["0.0.0.0/0"]
-  }
+
   outbound_rule {
     protocol              = "tcp"
-    port_range           = "1-65535"
+    port_range           = "80"
+    destination_addresses = ["0.0.0.0/0"]
+  }
+
+  outbound_rule {
+    protocol              = "tcp"
+    port_range           = "22"
     destination_addresses = ["0.0.0.0/0"]
   }
 }
+
 # Output the droplet IP
 output "droplet_ip" {
   value = digitalocean_droplet.sc4013-stg.ipv4_address
