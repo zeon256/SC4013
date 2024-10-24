@@ -21,7 +21,7 @@ At least 1 numeric character
 
 TODO: Create unit test for regex
 */
-const passwordRegex = /^(?=.*[!@#$%^&*(),.?":{}|<>])(?=.*[A-Z])(?=.*[a-z])(?=.*\d).+$/gm;
+export const passwordRegex = /^(?=.*[!@#$%^&*(),.?":{}|<>])(?=.*[A-Z])(?=.*[a-z])(?=.*\d).+$/gm;
 
 type LoginResponse = { message: string };
 
@@ -154,6 +154,7 @@ async function loginHandler(
 	jwtToken.set({
 		value: await jwt.sign({ email: existingAcc.email }),
 		httpOnly: true,
+		sameSite: "strict",
 		maxAge: 2 * 24 * 60 * 60, // 2 days
 		path: "/",
 	});
