@@ -19,5 +19,5 @@ jobs:
         run: bun install
       - name: Run unit tests
         env:
-          NODE_ENV: tets
+          NODE_ENV: tests
         run: bun test
