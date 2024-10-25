@@ -127,7 +127,8 @@ const logoutSchema = {
 	},
 	detail: {
 		summary: "Logout the user",
-		description: "Performs a logout for the user and returns the status. If an error occurs, a 500 status is returned.",
+		description:
+			"Performs a logout for the user and returns the status. If an error occurs, a 500 status is returned.",
 	},
 	cookie: cookieSchema,
 };
@@ -170,7 +171,10 @@ async function loginHandler(
 	return { message: "Success" };
 }
 
-async function registerHandler(pool: Pool, body: Static<typeof registerBody>): Promise<LoginResponse> {
+async function registerHandler(
+	pool: Pool,
+	body: Static<typeof registerBody>,
+): Promise<LoginResponse> {
 	if (body.email !== body.confirm_email) {
 		throw new BadRequestError("Email does not match confirm email!");
 	}
@@ -233,7 +237,8 @@ export function authRoute(pool: Pool) {
 		.decorate("pool", pool)
 		.post(
 			"/login",
-			async ({ jwt, pool, body, cookie: { jwt_token } }) => await loginHandler(pool, body, jwt_token, jwt),
+			async ({ jwt, pool, body, cookie: { jwt_token } }) =>
+				await loginHandler(pool, body, jwt_token, jwt),
 			loginSchema,
 		)
 		.post("/register", async ({ pool, body }) => await registerHandler(pool, body), registerSchema)
@@ -243,6 +248,10 @@ export function authRoute(pool: Pool) {
 				throw new InvalidAccountCredentialsError("Unauthorized account!");
 			}
 		})
-		.post("/logout", async ({ cookie: { jwt_token } }) => await logoutHandler(jwt_token), logoutSchema);
+		.post(
+			"/logout",
+			async ({ cookie: { jwt_token } }) => await logoutHandler(jwt_token),
+			logoutSchema,
+		);
 	return auth;
 }

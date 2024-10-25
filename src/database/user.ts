@@ -7,7 +7,12 @@ export async function getUserByEmail(pool: Pool, email: string): Promise<UserMod
 	return res.rows[0];
 }
 
-export async function insertUser(pool: Pool, email: string, hash_pw: string, salt: string): Promise<number> {
+export async function insertUser(
+	pool: Pool,
+	email: string,
+	hash_pw: string,
+	salt: string,
+): Promise<number> {
 	const result = await pool.query<{ id: number }>(
 		'INSERT INTO "User" (email, password, salt, last_login) VALUES ($1, $2, $3, NULL) RETURNING id',
 		[email, hash_pw, salt],
@@ -17,13 +22,17 @@ export async function insertUser(pool: Pool, email: string, hash_pw: string, sal
 }
 
 export async function updateUserLastLogin(pool: Pool, email: string): Promise<void> {
-	await pool.query('UPDATE "User" SET last_login = NOW(), failed_login_attempt_count = 0 WHERE email = $1', [email]);
+	await pool.query(
+		'UPDATE "User" SET last_login = NOW(), failed_login_attempt_count = 0 WHERE email = $1',
+		[email],
+	);
 }
 
 export async function updateFailAttempt(pool: Pool, email: string): Promise<void> {
-	await pool.query('UPDATE "User" SET failed_login_attempt_count = failed_login_attempt_count + 1 WHERE email = $1', [
-		email,
-	]);
+	await pool.query(
+		'UPDATE "User" SET failed_login_attempt_count = failed_login_attempt_count + 1 WHERE email = $1',
+		[email],
+	);
 }
 
 export async function LockAccount(pool: Pool, email: string): Promise<void> {
