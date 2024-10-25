@@ -10,9 +10,7 @@ import { ip } from "./plugin/elysia_ip";
 
 async function tryConnectDb(pool: Pool, cfg: Readonly<AppConfig>) {
 	try {
-		console.log(
-			`[+] Trying to connect to ${cfg.dbConfig.host}:${cfg.dbConfig.port}/${cfg.dbConfig.database}`,
-		);
+		console.log(`[+] Trying to connect to ${cfg.dbConfig.host}:${cfg.dbConfig.port}/${cfg.dbConfig.database}`);
 		const client = await pool.connect();
 		console.log(
 			`[+] Successfully connected to database @ ${cfg.dbConfig.host}:${cfg.dbConfig.port}/${cfg.dbConfig.database}`,
@@ -27,6 +25,10 @@ async function tryConnectDb(pool: Pool, cfg: Readonly<AppConfig>) {
 export const app = new Elysia().state("ip", "");
 
 (async () => {
+	if (process.env.NODE_ENV === "test") {
+		return;
+	}
+
 	const cfgPath = process.argv[2] ?? "./config.json";
 	console.log(`[+] Got configFilePath: ${cfgPath}`);
 
@@ -34,7 +36,8 @@ export const app = new Elysia().state("ip", "");
 	const pool = new Pool(cfg.dbConfig);
 	await tryConnectDb(pool, cfg);
 
-	app.decorate("pool", pool)
+	app
+		.decorate("pool", pool)
 		.use(swagger())
 		.use(Logestic.preset("common"))
 		.onError(({ code, error }) => {
@@ -56,9 +59,7 @@ export const app = new Elysia().state("ip", "");
 
 	console.log(`[+] 🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`);
 
-	console.log(
-		`[+] View documentation at "http://${app.server?.hostname}:${app.server?.port}/swagger" in your browser`,
-	);
+	console.log(`[+] View documentation at "http://${app.server?.hostname}:${app.server?.port}/swagger" in your browser`);
 })();
 
 export type ElysiaApp = typeof app;
