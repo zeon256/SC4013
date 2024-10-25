@@ -4,7 +4,12 @@ import type { Pool } from "pg";
 import argon2 from "argon2";
 import { getUserByEmail, insertUser, LockAccount, updateFailAttempt } from "../../database/user";
 import jwt, { type JWTPayloadSpec } from "@elysiajs/jwt";
-import { AccountAlreadyExistError, BadRequestError, InvalidAccountCredentialsError, AccountLockOutError } from "./errors";
+import {
+	AccountAlreadyExistError,
+	BadRequestError,
+	InvalidAccountCredentialsError,
+	AccountLockOutError,
+} from "./errors";
 import { rateLimit } from "elysia-rate-limit";
 import { app } from "../../index";
 
@@ -49,15 +54,17 @@ const passwordFormat = t.String({
 	},
 });
 
-const loginBody = t.Object({ 
-	email: emailFormat, 
-	password: passwordFormat,
-},
-{
-	error({ errors }) {
-		throw new BadRequestError("Invalid JSON body");
+const loginBody = t.Object(
+	{
+		email: emailFormat,
+		password: passwordFormat,
 	},
-});
+	{
+		error({ errors }) {
+			throw new BadRequestError("Invalid JSON body");
+		},
+	},
+);
 
 const cookieSchema = t.Cookie({
 	jwt_token: t.String({
@@ -82,17 +89,19 @@ export const loginSchema = {
 	body: loginBody,
 };
 
-const registerBody = t.Object({
-	email: emailFormat,
-	confirm_email: emailFormat,
-	password: passwordFormat,
-	confirm_password: passwordFormat,
-},
-{
-	error({ errors }) {
-		throw new BadRequestError("Invalid JSON body");
+const registerBody = t.Object(
+	{
+		email: emailFormat,
+		confirm_email: emailFormat,
+		password: passwordFormat,
+		confirm_password: passwordFormat,
 	},
-});
+	{
+		error({ errors }) {
+			throw new BadRequestError("Invalid JSON body");
+		},
+	},
+);
 
 const registerSchema = {
 	response: {
@@ -127,14 +136,13 @@ async function loginHandler(
 	pool: Pool,
 	body: Static<typeof loginBody>,
 	jwtToken: Cookie<string | undefined>,
-	jwt: Jwt
+	jwt: Jwt,
 ): Promise<LoginResponse> {
 	const existingAcc = await getUserByEmail(pool, body.email);
 	if (existingAcc === null) {
 		throw new NotFoundError("Account does not exist!");
-	}else if (existingAcc.lockout || existingAcc.failed_login_attempt_count >= 5){
-		if (!existingAcc.lockout)
-			await LockAccount(pool, body.email);
+	} else if (existingAcc.lockout || existingAcc.failed_login_attempt_count >= 5) {
+		if (!existingAcc.lockout) await LockAccount(pool, body.email);
 		throw new AccountLockOutError("Account has been locked due to too many failed login attempts");
 	}
 
@@ -209,17 +217,19 @@ export function authRoute(pool: Pool) {
 				schema: t.Object({ email: t.String({ format: "email" }) }),
 			}),
 		)
-		.use(rateLimit({
-			scoping: 'scoped',
-			duration: 60000,
-			max:10,
-			injectServer: () => {
-			  return app?.server ?? null;
-			},
-			generator: (_) => {
-				return app.store.ip
-			}
-		  }))
+		.use(
+			rateLimit({
+				scoping: "scoped",
+				duration: 60000,
+				max: 10,
+				injectServer: () => {
+					return app?.server ?? null;
+				},
+				generator: (_) => {
+					return app.store.ip;
+				},
+			}),
+		)
 		.decorate("pool", pool)
 		.post(
 			"/login",

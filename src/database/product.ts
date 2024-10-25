@@ -56,11 +56,7 @@ export async function updateProduct(
 	return result.rows[0];
 }
 
-export async function deleteProduct(
-	pool: Pool,
-	userId: number,
-	id: number,
-): Promise<ProductModel | null> {
+export async function deleteProduct(pool: Pool, userId: number, id: number): Promise<ProductModel | null> {
 	const result = await pool.query<ProductModel>(
 		"UPDATE Product SET updated_by = $1, updated_at = NOW(), deleted_at = NOW() WHERE id = $2 RETURNING *;",
 		[userId, id],
