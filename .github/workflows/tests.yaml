@@ -20,4 +20,5 @@ jobs:
       - name: Run unit tests
         env:
           NODE_ENV: test
+          JWT_SECRET: jwtsamplesecret
         run: bun test
