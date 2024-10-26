@@ -43,6 +43,7 @@ const productsSchema = {
 	detail: {
 		summary: "Get Product Models",
 		description: "Return an array of product models with metadata",
+		tags: ["Products"],
 	},
 };
 
@@ -58,6 +59,7 @@ const productIdSchema = {
 	detail: {
 		summary: "Get Product Model By Id",
 		description: "Return a single product",
+		tags: ["Products"],
 	},
 };
 
@@ -70,6 +72,8 @@ const postProductSchema = {
 	detail: {
 		summary: "Create Product",
 		description: "Return a created product",
+		tags: ["Products"],
+		security: [{ CookieAuth: [] }], // This applies the security scheme globally
 	},
 };
 
@@ -86,7 +90,9 @@ const updateProductSchema = {
 	},
 	detail: {
 		summary: "Update Product By Id",
+		tags: ["Products"],
 		description: "Return the updated product",
+		security: [{ CookieAuth: [] }], // This applies the security scheme globally
 	},
 };
 
@@ -102,7 +108,9 @@ const deleteProductSchema = {
 	},
 	detail: {
 		summary: "Delete Product By Id",
+		tags: ["Products"],
 		description: "Return the deleted product",
+		security: [{ CookieAuth: [] }], // This applies the security scheme globally
 	},
 };
 
