@@ -6,10 +6,10 @@
 - Soh Wee Kiat
 
 ## Roadmap
-- [ ] Authentication JWT
-- [ ] Authorization and Access Control
+- [x] Authentication JWT
+- [x] Authorization and Access Control
 - [ ] Secure Error Handling and Logging
-- [ ] HTTPS Enforcement
+- [x] HTTPS Enforcement
 - [ ] Architecture Diagram
 - [x] OpenAPI Spec with Swagger
 - [ ] API Design and Documentation
@@ -20,12 +20,12 @@
     - [ ] Error thrown reduction
     - [ ] Database R/W Account segregation
     - [x] Input Validation and Sanitization
-    - [ ] Rate Limiting and Throttling
+    - [x] Rate Limiting and Throttling
 - [ ] Testing
-  - [ ] Unit Tests
+  - [x] Unit Tests
   - [ ] Integration Tests
   - [ ] Security Tests
-- [ ] Deployment to a Cloud Platform (Optional)
+- [x] Deployment to a Cloud Platform (Optional)
 - [ ] API Documentation
     - Comprehensive guide to using the API
 - [ ] Implemented API with Source Code
@@ -40,9 +40,11 @@
 - [x] Dockerfile
 - [ ] CI/CD DevSecOps
     - [x] Semantic Release
-    - [ ] CD to Staging Environment
+    - [x] CD to Prod Environment
     - [ ] SAST
     - [ ] Container Scanning
+    - [x] Unit Tests
+    - [ ] Integration Tests
 - [x] Endpoints
     - [x] `GET /api/v1/products`
     - [x] `GET /api/v1/products/:id`
