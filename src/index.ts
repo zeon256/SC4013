@@ -34,7 +34,8 @@ export const app = new Elysia().state("ip", "");
 	const pool = new Pool(cfg.dbConfig);
 	await tryConnectDb(pool, cfg);
 
-	app.decorate("pool", pool)
+	app
+		.decorate("pool", pool)
 		.use(swagger())
 		.use(Logestic.preset("common"))
 		.onError(({ code, error }) => {

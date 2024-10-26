@@ -124,7 +124,8 @@ export function productRoute(pool: Pool) {
 		.get("/", async ({ pool }) => await getProducts(pool), productsSchema)
 		.get(
 			"/:id",
-			async ({ pool, params: { id }, error }) => (await getProductsById(pool, id)) ?? error(404, "Not Found"),
+			async ({ pool, params: { id }, error }) =>
+				(await getProductsById(pool, id)) ?? error(404, "Not Found"),
 			productIdSchema,
 		)
 		.derive(async ({ pool, cookie: { jwt_token }, jwt }) => {
@@ -142,7 +143,11 @@ export function productRoute(pool: Pool) {
 
 			return { user };
 		})
-		.post("/", async ({ pool, body, user }) => await postProduct(pool, user, body), postProductSchema)
+		.post(
+			"/",
+			async ({ pool, body, user }) => await postProduct(pool, user, body),
+			postProductSchema,
+		)
 		.put(
 			"/:id",
 			async ({ pool, body, params: { id }, user }) => await updateProductById(pool, user, id, body),

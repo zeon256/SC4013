@@ -22,11 +22,17 @@ export async function insertUser(
 }
 
 export async function updateUserLastLogin(pool: Pool, email: string): Promise<void> {
-	await pool.query('UPDATE "User" SET last_login = NOW(), failed_login_attempt_count = 0 WHERE email = $1', [email]);
+	await pool.query(
+		'UPDATE "User" SET last_login = NOW(), failed_login_attempt_count = 0 WHERE email = $1',
+		[email],
+	);
 }
 
 export async function updateFailAttempt(pool: Pool, email: string): Promise<void> {
-	await pool.query('UPDATE "User" SET failed_login_attempt_count = failed_login_attempt_count + 1 WHERE email = $1', [email]);
+	await pool.query(
+		'UPDATE "User" SET failed_login_attempt_count = failed_login_attempt_count + 1 WHERE email = $1',
+		[email],
+	);
 }
 
 export async function LockAccount(pool: Pool, email: string): Promise<void> {
