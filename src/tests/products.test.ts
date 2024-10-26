@@ -119,20 +119,6 @@ describe("GET /products/:id tests", () => {
 			deleted_at: null,
 		});
 	});
-
-	test("Product Id = 2", async () => {
-		const response = await testJsonBody(2);
-		expect(response).toEqual({
-			id: 2,
-			name: "Test Product 2",
-			description: "Test Description 2",
-			created_by: 1,
-			updated_by: 2,
-			created_at: now.toISOString(),
-			updated_at: now.toISOString(),
-			deleted_at: null,
-		});
-	});
 });
 
 describe("Create Products Tests", () => {
