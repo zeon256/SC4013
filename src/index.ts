@@ -10,7 +10,9 @@ import { ip } from "./plugin/elysia_ip";
 
 async function tryConnectDb(pool: Pool, cfg: Readonly<AppConfig>) {
 	try {
-		console.log(`[+] Trying to connect to ${cfg.dbConfig.host}:${cfg.dbConfig.port}/${cfg.dbConfig.database}`);
+		console.log(
+			`[+] Trying to connect to ${cfg.dbConfig.host}:${cfg.dbConfig.port}/${cfg.dbConfig.database}`,
+		);
 		const client = await pool.connect();
 		console.log(
 			`[+] Successfully connected to database @ ${cfg.dbConfig.host}:${cfg.dbConfig.port}/${cfg.dbConfig.database}`,
@@ -38,7 +40,25 @@ export const app = new Elysia().state("ip", "");
 
 	app
 		.decorate("pool", pool)
-		.use(swagger())
+		.use(
+			swagger({
+				documentation: {
+					info: {
+						title: "SecureAPI",
+						version: "1.0.0",
+					},
+					components: {
+						securitySchemes: {
+							CookieAuth: {
+								type: "apiKey",
+								in: "cookie",
+								name: "jwt_token",
+							},
+						},
+					},
+				},
+			}),
+		)
 		.use(Logestic.preset("common"))
 		.onError(({ code, error }) => {
 			switch (code) {
@@ -59,7 +79,9 @@ export const app = new Elysia().state("ip", "");
 
 	console.log(`[+] 🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`);
 
-	console.log(`[+] View documentation at "http://${app.server?.hostname}:${app.server?.port}/swagger" in your browser`);
+	console.log(
+		`[+] View documentation at "http://${app.server?.hostname}:${app.server?.port}/swagger" in your browser`,
+	);
 })();
 
 export type ElysiaApp = typeof app;

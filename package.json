@@ -19,7 +19,8 @@
   "devDependencies": {
     "@biomejs/biome": "1.9.3",
     "@types/pg": "latest",
-    "bun-types": "latest"
+    "bun-types": "latest",
+    "pgmock2": "^2.1.7"
   },
   "module": "src/index.js"
 }
