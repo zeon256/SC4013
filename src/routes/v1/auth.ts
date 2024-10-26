@@ -23,8 +23,6 @@ At least 1 special character
 At least 1 uppercase character
 At least 1 lowercase character
 At least 1 numeric character
-
-TODO: Create unit test for regex
 */
 export const passwordRegex = /^(?=.*[!@#$%^&*(),.?":{}|<>])(?=.*[A-Z])(?=.*[a-z])(?=.*\d).+$/gm;
 

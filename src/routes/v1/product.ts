@@ -73,7 +73,7 @@ const postProductSchema = {
 		summary: "Create Product",
 		description: "Return a created product",
 		tags: ["Products"],
-		security: [{ CookieAuth: [] }], // This applies the security scheme globally
+		security: [{ CookieAuth: [] }],
 	},
 };
 
@@ -92,7 +92,7 @@ const updateProductSchema = {
 		summary: "Update Product By Id",
 		tags: ["Products"],
 		description: "Return the updated product",
-		security: [{ CookieAuth: [] }], // This applies the security scheme globally
+		security: [{ CookieAuth: [] }],
 	},
 };
 
@@ -110,7 +110,7 @@ const deleteProductSchema = {
 		summary: "Delete Product By Id",
 		tags: ["Products"],
 		description: "Return the deleted product",
-		security: [{ CookieAuth: [] }], // This applies the security scheme globally
+		security: [{ CookieAuth: [] }],
 	},
 };
 
