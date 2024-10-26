@@ -21,6 +21,18 @@ variable "do_registry_token" {
   # sensitive   = true
 }
 
+variable "dd_api_key" {
+  description = "Datadog API Key"
+  type        = string
+  # sensitive   = true
+}
+
+variable "dd_site" {
+  description = "Datadog Site"
+  type        = string
+  # sensitive   = true
+}
+
 # main.tf
 terraform {
   required_providers {
@@ -87,7 +99,40 @@ resource "digitalocean_droplet" "sc4013-stg" {
       "docker compose up -d",
       "docker compose ps",
       "sleep 10", # Wait for containers to start
-      "docker compose logs --tail=20" # Show recent logs
+      "docker compose logs --tail=20", # Show recent logs
+    ]
+  }
+
+  
+  provisioner "remote-exec" {
+    inline = [      
+      "export DD_API_KEY=${var.dd_api_key}",
+      "export DD_SITE=${var.dd_site}",
+      "bash -c \"$(curl -L https://install.datadoghq.com/scripts/install_script_agent7.sh)\"",
+
+      # Configure Datadog agent
+      "mkdir -p /etc/datadog-agent/conf.d/docker.d",
+      "echo 'init_config:' > /etc/datadog-agent/conf.d/docker.d/conf.yaml",
+      "echo 'instances:' >> /etc/datadog-agent/conf.d/docker.d/conf.yaml",
+      "echo '  - url: \"unix://var/run/docker.sock\"' >> /etc/datadog-agent/conf.d/docker.d/conf.yaml",
+      "echo '    collect_container_size: true' >> /etc/datadog-agent/conf.d/docker.d/conf.yaml",
+      "echo '    collect_image_size: true' >> /etc/datadog-agent/conf.d/docker.d/conf.yaml",
+      "echo '    collect_images_stats: true' >> /etc/datadog-agent/conf.d/docker.d/conf.yaml",
+
+      # Give Datadog agent access to Docker socket
+      "usermod -a -G docker dd-agent",
+
+      # Enable Docker integration in main Datadog config
+      "echo 'docker_enabled: true' >> /etc/datadog-agent/datadog.yaml",
+
+      # Enable log collection and collect all container logs
+      "echo 'logs_enabled: true' >> /etc/datadog-agent/datadog.yaml",
+      "echo 'logs_config:' >> /etc/datadog-agent/datadog.yaml",
+      "echo '  container_collect_all: true' >> /etc/datadog-agent/datadog.yaml",
+
+  
+      # Restart Datadog agent
+      "systemctl restart datadog-agent",
     ]
   }
 }
@@ -106,8 +151,13 @@ resource "digitalocean_firewall" "sc4013-firewall" {
     source_addresses = ["0.0.0.0/0"]
   }
   inbound_rule {
+    protocol         = "udp"
+    port_range       = "123"
+    source_addresses = ["0.0.0.0/0"]
+  }
+  inbound_rule {
     protocol         = "tcp"
-    port_range       = "3000"
+    port_range       = "443"
     source_addresses = ["0.0.0.0/0"]
   }
   outbound_rule {
