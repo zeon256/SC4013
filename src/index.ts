@@ -18,6 +18,7 @@ async function tryConnectDb(pool: Pool, cfg: Readonly<AppConfig>) {
 		console.log(
 			`[+] Successfully connected to database @ ${cfg.dbConfig.host}:${cfg.dbConfig.port}/${cfg.dbConfig.database}`,
 		);
+		await client.query(`SET search_path TO ${process.env.DB_SCHEMA}`);
 		client.release();
 	} catch (e) {
 		console.error(e);
