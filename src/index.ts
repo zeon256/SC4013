@@ -7,6 +7,7 @@ import { productRoute } from "./routes/v1/product";
 import { authRoute } from "./routes/v1/auth";
 import { statusRoute } from "./routes";
 import { ip } from "./plugin/elysia_ip";
+import { cloudflareMiddleware } from "./cloudflare";
 
 async function tryConnectDb(pool: Pool, cfg: Readonly<AppConfig>) {
 	try {
@@ -60,6 +61,7 @@ export const app = new Elysia().state("ip", "");
 			}),
 		)
 		.use(Logestic.preset("common"))
+		.use(cloudflareMiddleware())
 		.onError(({ code, error }) => {
 			switch (code) {
 				case "VALIDATION":
