@@ -15,7 +15,7 @@ services:
     depends_on:
       - postgres
   postgres:
-    image: postgres:latest
+    image: postgres:17.0
     container_name: sc4013_postgres_db_container
     env_file:
       - ../.env

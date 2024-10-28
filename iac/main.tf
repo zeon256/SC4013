@@ -87,8 +87,8 @@ resource "digitalocean_droplet" "sc4013-stg" {
   }
 
   provisioner "file" {
-    source      = "../db_schema/v1_init.sql"
-    destination = "/app/db_schema/v1_init.sql"
+    source      = "../db_schema/"
+    destination = "/app/db_schema"
   }
 
   # run docker-compose
