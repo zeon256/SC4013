@@ -10,15 +10,15 @@
 - [x] Authorization and Access Control
 - [x] Secure Error Handling and Logging
 - [x] HTTPS Enforcement
-- [ ] Architecture Diagram
+- [x] Architecture Diagram
 - [x] OpenAPI Spec with Swagger
 - [ ] API Design and Documentation
 - [x] Implementation of Core Functionality
-- [ ] Integration of Security Features    
+- [x] Integration of Security Features    
     - [x] GPG Signed commits
     - [x] Review Process
     - [x] Error thrown reduction
-    - [ ] Database R/W Account segregation
+    - [x] Database R/W Account segregation
     - [x] Input Validation and Sanitization
     - [x] Rate Limiting and Throttling
 - [ ] Testing
