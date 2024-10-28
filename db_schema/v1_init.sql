@@ -1,3 +1,4 @@
+SET search_path TO sc4013_schema;
 -- Create User table
 CREATE TABLE "User"
 (
