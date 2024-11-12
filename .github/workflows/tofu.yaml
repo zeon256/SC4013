@@ -40,6 +40,7 @@ jobs:
         cf_api_token = "${{ secrets.CF_API_TOKEN }}"
         cf_zone_id = "${{ secrets.CF_ZONE_ID }}"
         encryption_key = "${{ secrets.TOFU_SECRET }}"
+        sc4013_doamin = "${{ env.SC4013_DOMAIN }}"
         EOF
 
     - name: Create key files
@@ -50,6 +51,23 @@ jobs:
         echo "${{ secrets.RSA_KEY }}" > rsa_key.pem
         echo "${{ secrets.RSA_KEY_PUB }}" > rsa_key.pub.pem
         chmod 600 digitalocean_deploy rsa_key.pem
+
+    - name: Create JSON config file
+      run: |
+          echo "${{ secrets.CONFIG_JSON }}" > config.json
+          echo "Generated config.json with environment secrets"
+
+    - name: Create .env file
+      run: |
+          cat << EOF > .env
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+          POSTGRES_RW_USER=${{ secrets.POSTGRES_RW_USER }}
+          POSTGRES_RW_PASSWORD=${{ secrets.POSTGRES_RW_PASSWORD }}
+          DB_SCHEMA=${{ secrets.DB_SCHEMA }}
+          EOF
+          echo "Generated .env file with environment secrets"
 
     - name: OpenTofu Init
       working-directory: ${{ env.WORKING_DIR }}
