@@ -12,6 +12,8 @@ services:
       - "443:3000"
     volumes:
       - ../config.json:/usr/src/app/config/config.json
+      - ./rsa_key.pem:/usr/src/app/iac/rsa_key.pem
+      - ./rsa_key.pub.pem:/usr/src/app/iac/rsa_key.pub.pem
     depends_on:
       - postgres
   postgres:
