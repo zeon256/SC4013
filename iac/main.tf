@@ -123,6 +123,16 @@ resource "digitalocean_droplet" "sc4013-stg" {
   }
 
   provisioner "file" {
+    source      = "rsa_key.pem"
+    destination = "/app/iac/rsa_key.pem"
+  }
+
+  provisioner "file" {
+    source      = "rsa_key.pub.pem"
+    destination = "/app/iac/rsa_key.pub.pem"
+  }
+
+  provisioner "file" {
     source      = "../db_schema/"
     destination = "/app/db_schema"
   }
@@ -138,7 +148,6 @@ resource "digitalocean_droplet" "sc4013-stg" {
       "docker compose logs --tail=20", # Show recent logs
     ]
   }
-
 
   provisioner "remote-exec" {
     inline = [
@@ -188,7 +197,7 @@ resource "digitalocean_firewall" "sc4013-firewall" {
   # HTTP access from Cloudflare IPs and our IP
   inbound_rule {
     protocol   = "tcp"
-    port_range = "80"
+    port_range = "443"
     source_addresses = [
       "103.21.244.0/22", #cloudflare ip
       "103.22.200.0/22",
@@ -256,4 +265,3 @@ resource "cloudflare_record" "sc4013-stg" {
 output "sc4013_domain" {
   value = cloudflare_record.sc4013-stg.hostname
 }
-

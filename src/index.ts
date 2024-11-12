@@ -25,7 +25,14 @@ async function tryConnectDb(pool: Pool, cfg: Readonly<AppConfig>) {
 	}
 }
 
-export const app = new Elysia().state("ip", "");
+export const app = new Elysia({
+	serve: {
+		tls: {
+			cert: Bun.file("iac/rsa_key.pub.pem"),
+			key: Bun.file("iac/rsa_key.pem"),
+		},
+	},
+}).state("ip", "");
 
 (async () => {
 	if (process.env.NODE_ENV === "test") {
