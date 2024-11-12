@@ -11,6 +11,7 @@ on:
 env:
   TF_VERSION: '1.8.4'
   WORKING_DIR: './iac'
+  TF_LOG: 'DEBUG'
 
 jobs:
   tofu-action:
