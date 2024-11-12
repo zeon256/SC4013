@@ -45,6 +45,11 @@ variable "encryption_key" {
   sensitive   = true
 }
 
+variable "sc4013_domain" {
+  description = "SC4013 domain name"
+  type        = string
+}
+
 # main.tf
 terraform {
   required_providers {
@@ -256,7 +261,7 @@ output "droplet_ip" {
 
 resource "cloudflare_record" "sc4013-stg" {
   zone_id = var.cf_zone_id
-  name    = "sc4013.inve.rs"
+  name    = var.sc4013_domain
   value   = digitalocean_droplet.sc4013-stg.ipv4_address
   type    = "A"
   proxied = true
