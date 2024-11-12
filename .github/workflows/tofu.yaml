@@ -76,7 +76,7 @@ jobs:
 
     - name: OpenTofu Plan
       working-directory: ${{ env.WORKING_DIR }}
-      run: tofu plan -out=tfplan
+      run: tofu plan -out=tfplan -lock=false
 
     - name: OpenTofu Apply
       if: github.event.inputs.action == 'apply' || github.event_name == 'push'
