@@ -40,7 +40,7 @@ jobs:
         cf_api_token = "${{ secrets.CF_API_TOKEN }}"
         cf_zone_id = "${{ secrets.CF_ZONE_ID }}"
         encryption_key = "${{ secrets.TOFU_SECRET }}"
-        sc4013_domain = "${{ env.SC4013_DOMAIN }}"
+        sc4013_domain = "${{ secrets.SC4013_DOMAIN }}"
         EOF
 
     - name: Create key files
@@ -54,7 +54,7 @@ jobs:
 
     - name: Create JSON config file
       run: |
-          echo "${{ secrets.CONFIG_JSON }}" > config.json
+          echo "${{ secrets.CONFIG_JSON }}" | base64 -d > config.json
           echo "Generated config.json with environment secrets"
 
     - name: Create .env file
