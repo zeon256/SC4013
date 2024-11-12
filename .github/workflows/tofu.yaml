@@ -11,6 +11,7 @@ on:
 env:
   TF_VERSION: '1.8.4'
   WORKING_DIR: './iac'
+  TF_LOG: 'DEBUG'
 
 jobs:
   tofu-action:
@@ -75,7 +76,7 @@ jobs:
 
     - name: OpenTofu Plan
       working-directory: ${{ env.WORKING_DIR }}
-      run: tofu plan -out=tfplan
+      run: tofu plan -out=tfplan -lock=false
 
     - name: OpenTofu Apply
       if: github.event.inputs.action == 'apply' || github.event_name == 'push'
