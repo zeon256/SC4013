@@ -12,25 +12,37 @@ variable "region" {
 variable "do_token" {
   description = "DigitalOcean Token For Deploy"
   type        = string
-  # sensitive   = true
 }
 
 variable "do_registry_token" {
   description = "DigitalOcean Registry Token"
   type        = string
-  # sensitive   = true
 }
 
 variable "dd_api_key" {
   description = "Datadog API Key"
   type        = string
-  # sensitive   = true
 }
 
 variable "dd_site" {
   description = "Datadog Site"
   type        = string
-  # sensitive   = true
+}
+
+variable "cf_api_token" {
+  description = "Cloudflare API Token"
+  type        = string
+}
+
+variable "cf_zone_id" {
+  description = "Cloudflare Zone ID"
+  type        = string
+}
+
+variable "encryption_key" {
+  description = "Terraform State Encryption Key"
+  type        = string
+  sensitive   = true
 }
 
 # main.tf
@@ -40,11 +52,35 @@ terraform {
       source  = "digitalocean/digitalocean"
       version = "~> 2.0"
     }
+
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 3.0"
+    }
+  }
+
+  encryption {
+    key_provider "pbkdf2" "my_passphrase" {
+      passphrase = var.encryption_key
+    }
+
+    method "aes_gcm" "my_method" {
+      keys = key_provider.pbkdf2.my_passphrase
+    }
+
+    state {
+      method   = method.aes_gcm.my_method
+      enforced = true
+    }
   }
 }
 
 provider "digitalocean" {
   token = var.do_token
+}
+
+provider "cloudflare" {
+  api_token = var.cf_api_token
 }
 
 # Create a new droplet
@@ -69,7 +105,7 @@ resource "digitalocean_droplet" "sc4013-stg" {
       "mkdir /app/db_schema"
     ]
   }
-  
+
   # Copy configuration files
   provisioner "file" {
     source      = "../.env"
@@ -98,14 +134,14 @@ resource "digitalocean_droplet" "sc4013-stg" {
       "docker login registry.digitalocean.com -u ${var.do_registry_token} -p ${var.do_registry_token}", # setup registry keys
       "docker compose up -d",
       "docker compose ps",
-      "sleep 10", # Wait for containers to start
+      "sleep 10",                      # Wait for containers to start
       "docker compose logs --tail=20", # Show recent logs
     ]
   }
 
-  
+
   provisioner "remote-exec" {
-    inline = [      
+    inline = [
       "export DD_API_KEY=${var.dd_api_key}",
       "export DD_SITE=${var.dd_site}",
       "bash -c \"$(curl -L https://install.datadoghq.com/scripts/install_script_agent7.sh)\"",
@@ -130,15 +166,16 @@ resource "digitalocean_droplet" "sc4013-stg" {
       "echo 'logs_config:' >> /etc/datadog-agent/datadog.yaml",
       "echo '  container_collect_all: true' >> /etc/datadog-agent/datadog.yaml",
 
-  
+
       # Restart Datadog agent
       "systemctl restart datadog-agent",
     ]
   }
 }
+
 # Create a firewall
 resource "digitalocean_firewall" "sc4013-firewall" {
-  name = "sc4013-firewall"
+  name        = "sc4013-firewall"
   droplet_ids = [digitalocean_droplet.sc4013-stg.id]
 
   # SSH access
@@ -150,10 +187,10 @@ resource "digitalocean_firewall" "sc4013-firewall" {
 
   # HTTP access from Cloudflare IPs and our IP
   inbound_rule {
-    protocol         = "tcp"
-    port_range       = "80"
+    protocol   = "tcp"
+    port_range = "80"
     source_addresses = [
-      "103.21.244.0/22",
+      "103.21.244.0/22", #cloudflare ip
       "103.22.200.0/22",
       "103.31.4.0/22",
       "104.16.0.0/13",
@@ -175,8 +212,12 @@ resource "digitalocean_firewall" "sc4013-firewall" {
       "2405:8100::/32",
       "2a06:98c0::/29",
       "2c0f:f248::/32",
-      "202.55.71.59", # budi IP address 
-      "42.60.14.4" # wee kiat IP address
+      "155.69.0.0/24", # NTU CIDR AS9419
+      "155.69.1.0/24",
+      "155.69.64.0/19",
+      "155.69.96.0/23", # NTU CIDR
+      "202.55.71.59",   # budi IP address 
+      "42.60.14.4"      # wee kiat IP address
     ]
   }
 
@@ -203,3 +244,16 @@ resource "digitalocean_firewall" "sc4013-firewall" {
 output "droplet_ip" {
   value = digitalocean_droplet.sc4013-stg.ipv4_address
 }
+
+resource "cloudflare_record" "sc4013-stg" {
+  zone_id = var.cf_zone_id
+  name    = "sc4013.inve.rs"
+  value   = digitalocean_droplet.sc4013-stg.ipv4_address
+  type    = "A"
+  proxied = true
+}
+
+output "sc4013_domain" {
+  value = cloudflare_record.sc4013-stg.hostname
+}
+
