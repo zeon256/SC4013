@@ -1,0 +1,89 @@
+name: OpenTofu Apply/Destroy
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform (apply/destroy)'
+        required: true
+        default: 'apply'
+
+env:
+  TF_VERSION: '1.8.4'
+  WORKING_DIR: './iac'
+
+jobs:
+  tofu-action:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup OpenTofu
+      uses: opentofu/setup-opentofu@v1
+      with:
+        tofu_version: ${{ env.TF_VERSION }}
+
+    - name: Create terraform.tfvars
+      working-directory: ${{ env.WORKING_DIR }}
+      run: |
+        cat << EOF > terraform.tfvars
+        do_token = "${{ secrets.DO_TOKEN }}"
+        ssh_key = "${{ secrets.SSH_KEY }}"
+        region = "${{ secrets.REGION }}"
+        dd_api_key = "${{ secrets.DD_API_KEY }}"
+        dd_site = "us5.datadoghq.com"
+        cf_api_token = "${{ secrets.CF_API_TOKEN }}"
+        cf_zone_id = "${{ secrets.CF_ZONE_ID }}"
+        encryption_key = "${{ secrets.TOFU_SECRET }}"
+        EOF
+
+    - name: Create key files
+      working-directory: ${{ env.WORKING_DIR }}
+      run: |
+        echo "${{ secrets.DIGITALOCEAN_DEPLOY }}" > digitalocean_deploy
+        echo "${{ secrets.DIGITALOCEAN_DEPLOY_PUB }}" > digitalocean_deploy.pub
+        echo "${{ secrets.RSA_KEY }}" > rsa_key.pem
+        echo "${{ secrets.RSA_KEY_PUB }}" > rsa_key.pub.pem
+        chmod 600 digitalocean_deploy rsa_key.pem
+
+    - name: OpenTofu Init
+      working-directory: ${{ env.WORKING_DIR }}
+      run: tofu init
+
+    - name: OpenTofu Plan
+      working-directory: ${{ env.WORKING_DIR }}
+      run: tofu plan -out=tfplan
+
+    - name: OpenTofu Apply
+      if: github.event.inputs.action == 'apply' || github.event_name == 'push'
+      working-directory: ${{ env.WORKING_DIR }}
+      run: tofu apply -auto-approve tfplan
+      continue-on-error: true
+
+    - name: OpenTofu Destroy
+      if: github.event.inputs.action == 'destroy'
+      working-directory: ${{ env.WORKING_DIR }}
+      run: tofu destroy -auto-approve
+      continue-on-error: true
+
+    - name: Commit and Push State (if changed)
+      working-directory: ${{ env.WORKING_DIR }}
+      run: |
+        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add terraform.tfstate
+        git commit -m "cicd: update opentofu state" || echo "No changes to commit"
+        git push https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+
+
+    - name: Cleanup Sensitive Files
+      if: always()
+      working-directory: ${{ env.WORKING_DIR }}
+      run: |
+        rm -f terraform.tfvars
+        rm -f digitalocean_deploy digitalocean_deploy.pub rsa_key.pem rsa_key.pub.pem
