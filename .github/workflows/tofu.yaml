@@ -123,6 +123,11 @@ jobs:
     - name: Commit and Push State (if changed)
       working-directory: ${{ env.WORKING_DIR }}
       run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.DEPLOY_SECRET }}" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
+        eval "$(ssh-agent -s)"
+        ssh-add ~/.ssh/deploy_key
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         git add terraform.tfstate terraform.tfstate.backup
