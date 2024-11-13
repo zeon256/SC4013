@@ -48,9 +48,8 @@ config.json
 iac/terraform.tfvars
 iac/.terraform
 iac/.terraform.lock.hcl
-iac/terraform.tfstate
-iac/terraform.tfstate.backup
 iac/digitalocean_deploy
 iac/digitalocean_deploy.pub
 iac/rsa_key.pem
 iac/rsa_key.pub.pem
+iac/tfplan
