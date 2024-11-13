@@ -39,6 +39,7 @@ jobs:
       run: |
         cat << EOF > terraform.tfvars
         do_token = "${{ secrets.DO_TOKEN }}"
+        do_registry_token = "${{ secrets.DO_REGISTRY_TOKEN }}"
         ssh_key = "${{ secrets.SSH_KEY }}"
         region = "${{ secrets.REGION }}"
         dd_api_key = "${{ secrets.DD_API_KEY }}"
