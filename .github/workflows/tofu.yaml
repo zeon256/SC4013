@@ -1,5 +1,4 @@
 name: OpenTofu Apply/Destroy
-
 on:
   workflow_dispatch:
     inputs:
@@ -7,19 +6,18 @@ on:
         description: 'Action to perform (apply/destroy)'
         required: true
         default: 'apply'
-
 env:
   TF_VERSION: '1.8.4'
   WORKING_DIR: './iac'
   TF_LOG: 'TRACE'
-
+  # Add timeout settings
+  TF_CLI_ARGS: "-no-color"
 jobs:
   tofu-action:
     runs-on: ubuntu-latest
     environment: production
     permissions:
       contents: write
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -28,6 +26,13 @@ jobs:
       uses: opentofu/setup-opentofu@v1
       with:
         tofu_version: ${{ env.TF_VERSION }}
+
+    # Add debug step to check working directory contents
+    - name: Debug - List Directory
+      run: |
+        pwd
+        ls -la
+        ls -la ${{ env.WORKING_DIR }}
 
     - name: Create terraform.tfvars
       working-directory: ${{ env.WORKING_DIR }}
@@ -43,6 +48,9 @@ jobs:
         encryption_key = "${{ secrets.TOFU_SECRET }}"
         sc4013_domain = "${{ secrets.SC4013_DOMAIN }}"
         EOF
+        # Add debug output
+        echo "terraform.tfvars created successfully"
+        ls -la terraform.tfvars
 
     - name: Create key files
       working-directory: ${{ env.WORKING_DIR }}
@@ -52,34 +60,53 @@ jobs:
         echo "${{ secrets.RSA_KEY }}" > rsa_key.pem
         echo "${{ secrets.RSA_KEY_PUB }}" > rsa_key.pub.pem
         chmod 600 digitalocean_deploy rsa_key.pem
+        # Add debug output
+        echo "Key files created successfully"
+        ls -la digitalocean_deploy* rsa_key*
 
     - name: Create JSON config file
       run: |
-          echo "${{ secrets.CONFIG_JSON }}" | base64 -d > config.json
-          echo "Generated config.json with environment secrets"
+        echo "${{ secrets.CONFIG_JSON }}" | base64 -d > config.json
+        echo "Generated config.json with environment secrets"
+        ls -la config.json
 
     - name: Create .env file
       run: |
-          cat << EOF > .env
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
-          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_DB=${{ secrets.POSTGRES_DB }}
-          POSTGRES_RW_USER=${{ secrets.POSTGRES_RW_USER }}
-          POSTGRES_RW_PASSWORD=${{ secrets.POSTGRES_RW_PASSWORD }}
-          DB_SCHEMA=${{ secrets.DB_SCHEMA }}
-          EOF
-          echo "Generated .env file with environment secrets"
+        cat << EOF > .env
+        JWT_SECRET=${{ secrets.JWT_SECRET }}
+        POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+        POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+        POSTGRES_RW_USER=${{ secrets.POSTGRES_RW_USER }}
+        POSTGRES_RW_PASSWORD=${{ secrets.POSTGRES_RW_PASSWORD }}
+        DB_SCHEMA=${{ secrets.DB_SCHEMA }}
+        EOF
+        echo "Generated .env file with environment secrets"
+        ls -la .env
 
     - name: OpenTofu Init
       working-directory: ${{ env.WORKING_DIR }}
-      run: tofu init
+      run: |
+        tofu init
+        echo "Init completed successfully"
 
     - name: OpenTofu Plan
       working-directory: ${{ env.WORKING_DIR }}
-      run: tofu plan -out=tfplan
+      run: |
+        echo "Starting plan operation..."
+        timeout 300 tofu plan -input=false -out=tfplan || exit_code=$?
+        if [ -n "$exit_code" ]; then
+          echo "Plan operation timed out or failed with exit code: $exit_code"
+          echo "Current directory contents:"
+          ls -la
+          echo "Last 50 lines of terraform.log (if exists):"
+          tail -n 50 terraform.log || true
+          exit $exit_code
+        fi
+      env:
+        TF_LOG_PATH: terraform.log
 
     - name: OpenTofu Apply
-      if: github.event.inputs.action == 'apply' || github.event_name == 'push'
+      if: github.event.inputs.action == 'apply'
       working-directory: ${{ env.WORKING_DIR }}
       run: tofu apply -auto-approve tfplan
       continue-on-error: true
@@ -95,14 +122,17 @@ jobs:
       run: |
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
-        git add terraform.tfstate
+        git add terraform.tfstate terraform.tfstate.backup
         git commit -m "cicd: update opentofu state" || echo "No changes to commit"
         git push https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
 
-
+    # Modified cleanup to run in all cases and include debug
     - name: Cleanup Sensitive Files
       if: always()
       working-directory: ${{ env.WORKING_DIR }}
       run: |
+        echo "Starting cleanup..."
         rm -f terraform.tfvars
         rm -f digitalocean_deploy digitalocean_deploy.pub rsa_key.pem rsa_key.pub.pem
+        rm -f terraform.log
+        echo "Cleanup completed"
