@@ -9,7 +9,7 @@ on:
 env:
   TF_VERSION: '1.8.4'
   WORKING_DIR: './iac'
-  TF_LOG: 'TRACE'
+  TF_LOG: ${{ vars.TF_LOG }}
   # Add timeout settings
   TF_CLI_ARGS: "-no-color"
 jobs:
@@ -21,6 +21,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        ssh-key: ${{secrets.DEPLOY_SECRET}}
 
     - name: Setup OpenTofu
       uses: opentofu/setup-opentofu@v1
@@ -125,7 +127,9 @@ jobs:
         git config --local user.name "github-actions[bot]"
         git add terraform.tfstate terraform.tfstate.backup
         git commit -m "cicd: update opentofu state" || echo "No changes to commit"
-        git push https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+        git config core.sshCommand "ssh -o StrictHostKeyChecking=accept-new" # Set SSH command to use strict host checking
+        git push git@github.com:${{ github.repository }}.git HEAD:${{ github.ref }}
+        echo "Successfully pushed changes"
 
     # Modified cleanup to run in all cases and include debug
     - name: Cleanup Sensitive Files
