@@ -12,11 +12,14 @@ import { getUserByEmail as dbGetUserByEmail } from "../../database/user";
 import type { Product, ProductModel, UserModel } from "../../models";
 import { BadRequestError, InvalidAccountCredentialsError, NotEnoughPermission } from "./errors";
 
+const nameDescriptionPattern = /^[a-zA-Z0-9 _-]+$/;
+
 const productSchema = t.Object({
 	id: t.Number(),
 	name: t.String({
 		minLength: 1,
 		maxLength: 100,
+		pattern: nameDescriptionPattern.source,
 		error({ errors }) {
 			throw new BadRequestError(errors[0].message);
 		},
@@ -24,6 +27,7 @@ const productSchema = t.Object({
 	description: t.String({
 		minLength: 1,
 		maxLength: 1000,
+		pattern: nameDescriptionPattern.source,
 		error({ errors }) {
 			throw new BadRequestError(errors[0].message);
 		},
